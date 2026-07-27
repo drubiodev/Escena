@@ -1,0 +1,39 @@
+<link rel="stylesheet" href="./toolbar.css">
+
+<header class="toolbar">
+    <div class="escena-logo" role="img" aria-label="Escena">
+        <span class="escena-logo__mark" aria-hidden="true">
+            <span class="escena-logo__rect escena-logo__rect--back"></span>
+            <span class="escena-logo__rect escena-logo__rect--front"></span>
+        </span>
+        <span class="escena-logo__word">Escena</span>
+    </div>
+
+    <div class="toolbar__title">
+        <input class="deck-title" $ref="title" $bind="title" oninput="renameDeck()" placeholder="Untitled deck"
+            aria-label="Deck title" spellcheck="false" />
+    </div>
+
+    <div class="toolbar__actions">
+        <button class="btn btn--icon" title="Undo (⌘Z)" aria-label="Undo">↺</button>
+        <button class="btn btn--icon" title="Redo (⇧⌘Z)" aria-label="Redo">↻</button>
+        <span class="toolbar__divider" aria-hidden="true"></span>
+        <button class="btn" title="Open a .slideforge.json file">Open</button>
+        <button class="btn" title="Export deck as JSON (⌘S)">Export</button>
+        <span class="toolbar__divider" aria-hidden="true"></span>
+        <button class="btn btn--primary" title="Present (P)">▶&nbsp;Present</button>
+        <button class="btn btn--icon" title="Presenter view in a second window (V)" aria-label="Presenter view">🖥</button>
+    </div>
+</header>
+
+<script>
+    let title = "Untitled deck";
+
+    const renameDeck = () => {
+        console.log("Renaming deck to:", title);
+    };
+
+    $host.addEventListener("ladrillos:ready", () => {
+        if (title === "") $refs.title.focus();
+    });
+</script>
