@@ -18,15 +18,36 @@ body {
     --escena-blue: #1B3BEF;
     --escena-cyan: #22D3F5;
     --escena-ink: #F7F7F5;
-    --escena-surface: #14131a;
-    --escena-border: #1c1a24;
+    --escena-surface: #1c1b24;
+    --escena-border: #252332;
     --escena-gradient: linear-gradient(45deg, var(--escena-blue), var(--escena-cyan));
     --escena-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 body {
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     background: var(--escena-surface);
     color: var(--escena-ink);
     font-family: var(--escena-font);
+}
+
+e-toolbar {
+    flex: none;
+}
+
+/* Workspace: left pane | canvas | right pane (panes come later) */
+.workspace {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    min-width: 0;
+}
+
+e-canvas {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
 }

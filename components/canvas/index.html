@@ -1,0 +1,172 @@
+<div class="escena-canvas" $ref="canvas">
+    <div class="escena-shellbox" $ref="shell">
+        <div class="escena-stage" $ref="stage">
+            <for each="block in blocks" key="block.id">
+                <div class="escena-frame" data-id="{block.id}"
+                    style="--x: {block.x}; --y: {block.y}; --w: {block.w}; --h: {block.h}">
+                    <e-block type="{block.type}" props="{propsAttr(block)}"></e-block>
+                </div>
+            </for>
+        </div>
+    </div>
+    <button onclick="rename()">rename</button>
+
+    <div class="escena-overlay" $ref="overlay">
+        <div class="escena-hover" $ref="hover"></div>
+        <div class="escena-guide is-v" $ref="guideV"></div>
+        <div class="escena-guide is-h" $ref="guideH"></div>
+
+        <div class="escena-sel" $ref="sel">
+            <span class="escena-handle" data-dir="nw"></span>
+            <span class="escena-handle" data-dir="n"></span>
+            <span class="escena-handle" data-dir="ne"></span>
+            <span class="escena-handle" data-dir="e"></span>
+            <span class="escena-handle" data-dir="se"></span>
+            <span class="escena-handle" data-dir="s"></span>
+            <span class="escena-handle" data-dir="sw"></span>
+            <span class="escena-handle" data-dir="w"></span>
+        </div>
+
+        <div class="escena-readout" $ref="readout"></div>
+    </div>
+</div>
+
+
+<style>
+    :host {
+        display: block;
+        min-height: 0;
+        min-width: 0;
+        --escena-slide-width: 1280;
+        --escena-slide-height: 720;
+        --escena-canvas-gutter: 2rem;
+    }
+
+    .escena-canvas {
+        container-type: size;
+        display: grid;
+        place-items: center;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #181820;
+    }
+
+    .escena-shellbox {
+        position: relative;
+        width: min(calc(var(--escena-slide-width) * 1px),
+                100cqw - 2 * var(--escena-canvas-gutter),
+                (100cqh - 2 * var(--escena-canvas-gutter)) * var(--escena-slide-width) / var(--escena-slide-height));
+        aspect-ratio: var(--escena-slide-width) / var(--escena-slide-height);
+        background: #fdfdfd;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+    }
+
+    .escena-stage {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: calc(var(--escena-slide-width) * 1px);
+        height: calc(var(--escena-slide-height) * 1px);
+        transform-origin: top left;
+        transform: scale(var(--escena-scale, 1));
+        background: #fdfdfd;
+    }
+
+    @media (max-width: 900px) {
+        .escena-canvas {
+            --escena-canvas-gutter: 1rem;
+        }
+    }
+
+    .escena-frame {
+        position: absolute;
+        left: calc(var(--x) * 1px);
+        top: calc(var(--y) * 1px);
+        width: calc(var(--w) * 1px);
+        height: calc(var(--h) * 1px);
+    }
+
+    /* e-block is light DOM, so its box lives in this stylesheet. */
+    e-block,
+    .escena-block-slot {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .escena-missing {
+        display: grid;
+        place-items: center;
+        height: 100%;
+        border: 2px dashed #c9c9d4;
+        border-radius: 6px;
+        font-family: var(--escena-font, system-ui, sans-serif);
+        font-size: 20px;
+        color: #6b6b7a;
+    }
+
+    .escena-text {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        font-family: var(--escena-font, system-ui, sans-serif);
+        font-size: calc(var(--fs) * 1px);
+        font-weight: var(--weight, 400);
+        text-align: var(--align, left);
+        color: var(--color, #141420);
+        line-height: 1.15;
+        white-space: pre-wrap;
+        /* multi-line text later */
+        overflow-wrap: break-word;
+    }
+</style>
+
+<script type="module">
+    import { createBlock } from "../../blocks/index.js";
+
+    // Props cross to <e-block> as JSON: attribute values are strings, and the
+    // dispatcher is what turns them back into per-prop attributes.
+    function propsAttr(block) {
+        return JSON.stringify(block.props);
+    }
+
+    function rename() {
+        const target = blocks[0].id;
+        blocks = blocks.map((b) =>
+            b.id === target
+                ? { ...b, props: { ...b.props, text: "Hola " + Date.now() % 1000 } }
+                : b
+        );
+    }
+    const STAGE_W = 1280;
+    const STAGE_H = 720;
+
+    // Screen pixels per logical pixel. Everything else derives from this.
+    function scale() {
+        return $refs.shell.clientWidth / STAGE_W || 1;
+    }
+
+    function fit() {
+        $refs.shell.style.setProperty("--escena-scale", scale());
+    }
+
+    $host.addEventListener("ladrillos:ready", () => {
+        new ResizeObserver(fit).observe($refs.shell);
+        fit();
+    });
+
+    let blocks = [
+        createBlock("heading", {
+            x: 160, y: 220, w: 960, h: 180,
+            props: { text: "Escena", size: 96, align: "center" },
+        }),
+        createBlock("text", {
+            x: 160, y: 420, w: 960, h: 180,
+            props: { text: "A simple web-based presentation tool", size: 48, align: "center", tone: "muted" },
+        }),
+    ];
+</script>
