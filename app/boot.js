@@ -20,7 +20,7 @@ export async function boot()
 {
     // Cache parsed component templates to avoid fetching and processing them again.
     configure({ cacheSize: 10 });
-    await registerComponent("heading-block", "./blocks/heading.html", true);
+    await registerComponent("heading-block", "./blocks/heading", true);
 
     const frame = document.createElement("div");
     frame.className = "frame";
