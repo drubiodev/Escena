@@ -72,3 +72,13 @@ export const registry = {
         }));
     },
 };
+
+/**
+ * Logical slide dimensions used for scaling and centering.
+ * @type {number}
+ */
+export const SLIDE_WIDTH = 1280;
+/** Logical slide dimensions used for scaling and centering.
+ * @type {number}
+ */
+export const SLIDE_HEIGHT = 720;

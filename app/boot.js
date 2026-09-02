@@ -1,42 +1,58 @@
-// Ladrillos import
 import
 {
     configure,
-    registerComponent,
+    registerComponents,
 } from "https://cdn.jsdelivr.net/npm/ladrillosjs@2.1.3/dist/index.js";
 
+import { BUILT_IN_BLOCKS } from "../blocks/index.js";
+import
+{
+    registry,
+    SLIDE_HEIGHT,
+    SLIDE_WIDTH,
+} from "./registry.js";
+import { renderSlide } from "./renderer.js";
+import { STARTER_DECK } from "./starter-deck.js";
+
+/**
+ * Scales and centers the logical slide inside the available workspace.
+ * @param {HTMLElement} slideZoom Wrapper that receives the scale transform.
+ * @param {HTMLElement} editorWorkspace Available editor viewport.
+ * @returns {void}
+ */
 function fitSlide(slideZoom, editorWorkspace)
 {
     const scale = Math.min(
-        editorWorkspace.clientWidth / 1280,
-        editorWorkspace.clientHeight / 720
+        editorWorkspace.clientWidth / SLIDE_WIDTH,
+        editorWorkspace.clientHeight / SLIDE_HEIGHT
     );
+
     slideZoom.style.transform = `scale(${scale})`;
-    slideZoom.style.left = (editorWorkspace.clientWidth - 1280 * scale) / 2 + "px";
-    slideZoom.style.top = (editorWorkspace.clientHeight - 720 * scale) / 2 + "px";
+    slideZoom.style.left =
+        (editorWorkspace.clientWidth - SLIDE_WIDTH * scale) / 2 + "px";
+    slideZoom.style.top =
+        (editorWorkspace.clientHeight - SLIDE_HEIGHT * scale) / 2 + "px";
 }
 
+/**
+ * Registers block definitions and renders the first data-driven slide.
+ * @returns {Promise<void>} Resolves after components are ready and mounted.
+ */
 export async function boot()
 {
-    // Cache parsed component templates to avoid fetching and processing them again.
     configure({ cacheSize: 10 });
-    await registerComponent("heading-block", "./blocks/heading", true);
 
-    const frame = document.createElement("div");
-    frame.className = "frame";
+    // Definitions must exist before the registry can produce component records.
+    registry.defineMany(BUILT_IN_BLOCKS);
+    await registerComponents(registry.componentDefs());
 
-    const heading = document.createElement("heading-block");
-    heading.setAttribute("text", "Test Heading");
-    heading.setAttribute("size", "76");
+    const slidePage = document.querySelector(".slide-page");
+    const slideZoom = document.querySelector(".slide-zoom");
+    const editorWorkspace = document.querySelector(".editor-workspace");
 
-    frame.appendChild(heading);
-    document.querySelector(".slide-page").appendChild(frame);
+    renderSlide(slidePage, STARTER_DECK.slides[0], STARTER_DECK.theme);
 
-    const resize = () => fitSlide(
-        document.querySelector(".slide-zoom"),
-        document.querySelector(".editor-workspace")
-    );
-
+    const resize = () => fitSlide(slideZoom, editorWorkspace);
     window.addEventListener("resize", resize);
     resize();
 }

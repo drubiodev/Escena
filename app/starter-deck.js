@@ -20,12 +20,12 @@ export const STARTER_DECK = {
                 {
                     id: "b1", type: "heading",
                     x: 96, y: 80, w: 960, h: 190, z: 0, rotate: 0,
-                    props: { text: "Slides are data", size: "76" },
+                    props: { text: "This is heading", size: "76" },
                 },
                 {
                     id: "b2", type: "text",
                     x: 100, y: 300, w: 720, h: 180, z: 1, rotate: 0,
-                    props: { text: "One renderer. Every surface.", size: "30" },
+                    props: { text: "This is is a text block", size: "30" },
                 },
             ],
         },
