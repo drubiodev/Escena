@@ -1,0 +1,46 @@
+<p class="t is-{align} is-{tone}" data-editable style="font-size:{size}px">{text}</p>
+
+<style>
+    :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .t {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+        margin: 0;
+        line-height: 1.5;
+        color: var(--s-fg);
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        font-family: var(--s-font);
+    }
+
+    .t:focus {
+        outline: none;
+    }
+
+    .is-left {
+        text-align: left;
+    }
+
+    .is-center {
+        text-align: center;
+    }
+
+    .is-right {
+        text-align: right;
+    }
+
+    .is-accent {
+        color: var(--s-accent);
+    }
+
+    .is-muted {
+        color: var(--s-muted);
+    }
+</style>
