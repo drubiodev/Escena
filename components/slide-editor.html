@@ -1,0 +1,162 @@
+<div class="canvas" $ref="wrap">
+    <div class="slide-zoom" $ref="slideZoom">
+        <div class="slide-page" $ref="slidePage"></div>
+    </div>
+
+    <div class="interaction-layer" $ref="interactionLayer">
+        <div class="selection" $ref="selection">
+            <span class="handle" data-dir="nw"></span>
+            <span class="handle" data-dir="n"></span>
+            <span class="handle" data-dir="ne"></span>
+            <span class="handle" data-dir="e"></span>
+            <span class="handle" data-dir="se"></span>
+            <span class="handle" data-dir="s"></span>
+            <span class="handle" data-dir="sw"></span>
+            <span class="handle" data-dir="w"></span>
+        </div>
+        <div class="guide guide-v" $ref="guideV"></div>
+        <div class="guide guide-h" $ref="guideH"></div>
+        <div class="readout" $ref="readout"></div>
+    </div>
+</div>
+
+<script type="module">
+    window.Escena.canvas.mount($host, $refs);
+</script>
+
+<style>
+    :host,
+    .canvas {
+        display: block;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .slide-zoom {
+        position: absolute;
+        width: 1280px;
+        height: 720px;
+        transform-origin: 0 0;
+    }
+
+    .slide-page {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+    }
+
+    .interaction-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .selection {
+        position: absolute;
+        display: none;
+        border: 2px solid var(--ui-accent);
+        pointer-events: none;
+    }
+
+    .selection.is-visible {
+        display: block;
+    }
+
+    .handle {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        margin: -7px 0 0 -7px;
+        border: 2px solid var(--ui-accent);
+        border-radius: 3px;
+        background: white;
+        pointer-events: auto;
+    }
+
+    .handle[data-dir="nw"] {
+        left: 0;
+        top: 0;
+        cursor: nwse-resize;
+    }
+
+    .handle[data-dir="n"] {
+        left: 50%;
+        top: 0;
+        cursor: ns-resize;
+    }
+
+    .handle[data-dir="ne"] {
+        left: 100%;
+        top: 0;
+        cursor: nesw-resize;
+    }
+
+    .handle[data-dir="e"] {
+        left: 100%;
+        top: 50%;
+        cursor: ew-resize;
+    }
+
+    .handle[data-dir="se"] {
+        left: 100%;
+        top: 100%;
+        cursor: nwse-resize;
+    }
+
+    .handle[data-dir="s"] {
+        left: 50%;
+        top: 100%;
+        cursor: ns-resize;
+    }
+
+    .handle[data-dir="sw"] {
+        left: 0;
+        top: 100%;
+        cursor: nesw-resize;
+    }
+
+    .handle[data-dir="w"] {
+        left: 0;
+        top: 50%;
+        cursor: ew-resize;
+    }
+
+    .guide {
+        position: absolute;
+        display: none;
+        background: var(--ui-accent);
+    }
+
+    .guide.is-visible {
+        display: block;
+    }
+
+    .guide-v {
+        top: 0;
+        bottom: 0;
+        width: 1px;
+    }
+
+    .guide-h {
+        left: 0;
+        right: 0;
+        height: 1px;
+    }
+
+    .readout {
+        position: absolute;
+        display: none;
+        padding: 2px 6px;
+        color: white;
+        background: rgb(0 0 0 / 80%);
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .readout.is-visible {
+        display: block;
+    }
+</style>
