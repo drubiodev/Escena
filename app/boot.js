@@ -3,7 +3,6 @@ import
     configure,
     registerComponents,
 } from "ladrillosjs";
-
 import { BUILT_IN_BLOCKS } from "../blocks/index.js";
 import
 {
@@ -13,6 +12,10 @@ import
 } from "./registry.js";
 import { renderSlide } from "./renderer.js";
 import { STARTER_DECK } from "./starter-deck.js";
+import { store } from "./store.js";
+
+// Component scripts access shared services through this single bridge.
+window.Escena = { ...(window.Escena || {}), store };
 
 /**
  * Scales and centers the logical slide inside the available workspace.
