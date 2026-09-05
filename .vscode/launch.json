@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Escena in Edge",
+            "type": "msedge",
+            "request": "launch",
+            "url": "http://localhost:5500/",
+            "webRoot": "${workspaceFolder}",
+            "preLaunchTask": "serve Escena",
+            "sourceMaps": true
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "serve Escena",
+            "type": "shell",
+            "command": "npx",
+            "args": [
+                "--yes",
+                "serve@14.2.5",
+                ".",
+                "--listen",
+                "5500",
+                "--no-clipboard"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "escena-server",
+                "pattern": {
+                    "regexp": "a^"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "a^",
+                    "endsPattern": ".*Serving!.*"
+                }
+            },
+            "presentation": {
+                "panel": "dedicated",
+                "reveal": "silent"
+            }
+        }
+    ]
+}

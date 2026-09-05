@@ -2,7 +2,7 @@ import
 {
     configure,
     registerComponents,
-} from "https://cdn.jsdelivr.net/npm/ladrillosjs@2.1.3/dist/index.js";
+} from "ladrillosjs";
 
 import { BUILT_IN_BLOCKS } from "../blocks/index.js";
 import
