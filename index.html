@@ -16,12 +16,45 @@
 </head>
 
 <body>
+    <div class="slideshow-app">
+        <header class="app-bar">
+            <div class="brand-lockup">
+                <span class="brand-name">Escena</span>
+            </div>
 
-    <main class="editor-workspace">
-        <slide-editor></slide-editor>
-    </main>
+            <div class="document-title">
+                <span class="document-name">Escena rebuild</span>
+                <span class="document-state"><span class="status-dot"></span>Local draft</span>
+            </div>
 
+            <div class="app-bar-meta">
+                <span class="profile-mark" aria-label="Current workspace">DR</span>
+            </div>
+        </header>
 
+        <main class="editor-layout">
+            <block-palette></block-palette>
+            <section class="workspace">
+                <header class="workspace-bar">
+                    <div>
+                        <span class="workspace-kicker">Canvas</span>
+                        <strong>Slide 01</strong>
+                    </div>
+                </header>
+
+                <div class="slide-area">
+                    <slide-editor></slide-editor>
+                </div>
+
+                <footer class="workspace-status">
+                    <span>1280 &times; 720</span>
+                    <span>Slide 1 of 1</span>
+                </footer>
+            </section>
+            <property-inspector></property-inspector>
+        </main>
+    </div>
+    <div id="app-overlays"></div>
 
     <script type="module">
         import { boot } from "./app/boot.js";

@@ -1,6 +1,22 @@
 /** @type {Map<string, Object>} */
 const definitions = new Map();
 
+/** Subscribers notified when a definition enters the catalog. */
+const definitionListeners = new Set();
+
+const PROP_TYPES = [
+    "text",
+    "textarea",
+    "select",
+    "color",
+    "number",
+    "range",
+    "toggle",
+    "lines",
+    "image",
+];
+
+
 /** Block catalog shared by rendering and editor UI. */
 export const registry = {
     /**
@@ -15,14 +31,35 @@ export const registry = {
             throw new Error("A block needs type and path");
 
         // Normalize once so every consumer receives a complete definition.
+        const props = (definition.props || []).map((prop) => ({
+            label: prop.key,
+            type: "text",
+            value: "",
+            options: [],
+            ...prop,
+        }));
+
+        for (const prop of props)
+        {
+            if (PROP_TYPES.includes(prop.type)) continue;
+            console.warn(
+                `Block "${definition.type}" property "${prop.key}" uses ` +
+                `unknown control "${prop.type}"; using text instead.`
+            );
+            prop.type = "text";
+        }
+
         const normalized = {
             label: definition.type,
+            icon: definition.icon || "",
             category: "Blocks",
             size: { w: 480, h: 200 },
-            props: [],
             ...definition,
+            props,
         };
+
         definitions.set(normalized.type, normalized);
+        definitionListeners.forEach((listener) => listener(normalized));
         return normalized;
     },
     /**
@@ -70,6 +107,43 @@ export const registry = {
             path: definition.path,
             useShadowDOM: definition.useShadowDOM !== false,
         }));
+    },
+    /**
+ * Reports whether a block type is registered.
+ * @param {string} type Block type key.
+ * @returns {boolean} Whether the type exists.
+ */
+    has(type)
+    {
+        return definitions.has(type);
+    },
+
+    /**
+     * Groups definitions for the palette without changing registration order.
+     * @returns {{name: string, items: Object[]}[]} Ordered category groups.
+     */
+    byCategory()
+    {
+        const groups = new Map();
+        for (const definition of this.all())
+        {
+            if (!groups.has(definition.category))
+                groups.set(definition.category, []);
+            groups.get(definition.category).push(definition);
+        }
+
+        return [...groups.entries()].map(([name, items]) => ({ name, items }));
+    },
+
+    /**
+     * Subscribes to definitions added after startup.
+     * @param {(definition: Object) => void} listener Definition callback.
+     * @returns {() => void} Function that removes the callback.
+     */
+    onDefine(listener)
+    {
+        definitionListeners.add(listener);
+        return () => definitionListeners.delete(listener);
     },
 };
 

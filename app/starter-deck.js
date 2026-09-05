@@ -9,7 +9,7 @@
 export const STARTER_DECK = {
     id: "starter",
     title: "Escena rebuild",
-    theme: "brick",
+    theme: "default",
     slides: [
         {
             id: "s1",

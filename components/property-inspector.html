@@ -1,0 +1,65 @@
+<aside class="inspector-panel">
+    <header class="panel-header inspector-header">
+        <span class="panel-kicker">Selected block</span>
+        <h1>Design</h1>
+        <p>Fine-tune content and layout.</p>
+    </header>
+
+    <div class="inspector-empty" $ref="empty">
+        <span class="empty-icon" aria-hidden="true"></span>
+        <strong>Nothing selected</strong>
+        <span>Select a block on the canvas to start editing.</span>
+    </div>
+
+    <section $ref="blockPane" hidden>
+        <h2 class="inspector-section-title">Content</h2>
+        <div $ref="fields"></div>
+
+        <fieldset>
+            <legend>Position and size</legend>
+            <label class="geometry-field">
+                <span>X</span>
+                <input type="number" data-geo="x" aria-label="X position" />
+            </label>
+            <label class="geometry-field">
+                <span>Y</span>
+                <input type="number" data-geo="y" aria-label="Y position" />
+            </label>
+            <label class="geometry-field">
+                <span>W</span>
+                <input type="number" data-geo="w" min="32" aria-label="Width" />
+            </label>
+            <label class="geometry-field">
+                <span>H</span>
+                <input type="number" data-geo="h" min="32" aria-label="Height" />
+            </label>
+        </fieldset>
+
+        <h2 class="inspector-section-title">Alignment</h2>
+        <div class="inspector-actions" aria-label="Alignment">
+            <button type="button" data-align="left">Left</button>
+            <button type="button" data-align="center">Center</button>
+            <button type="button" data-align="right">Right</button>
+            <button type="button" data-align="top">Top</button>
+            <button type="button" data-align="middle">Middle</button>
+            <button type="button" data-align="bottom">Bottom</button>
+        </div>
+
+        <h2 class="inspector-section-title">Layer order</h2>
+        <div class="inspector-actions" aria-label="Layer order">
+            <button type="button" data-restack="back">Send to back</button>
+            <button type="button" data-restack="backward">Move backward</button>
+            <button type="button" data-restack="forward">Move forward</button>
+            <button type="button" data-restack="front">Bring to front</button>
+        </div>
+
+        <div class="inspector-actions inspector-footer-actions">
+            <button type="button" data-action="duplicate">Duplicate</button>
+            <button type="button" data-action="delete">Delete</button>
+        </div>
+    </section>
+</aside>
+
+<script type="module">
+    window.Escena.inspector.mount($host, $refs);
+</script>

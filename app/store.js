@@ -1,5 +1,4 @@
 import { $emit } from "ladrillosjs";
-import { STORE_CHANGE } from "./events.js";
 import { STARTER_DECK } from "./starter-deck.js";
 import
 {
@@ -7,6 +6,7 @@ import
     SLIDE_HEIGHT,
     SLIDE_WIDTH,
 } from "./registry.js";
+
 
 // The deck is saved; navigation, selection, and mode belong only to this tab.
 let deck = structuredClone(STARTER_DECK);
@@ -64,7 +64,6 @@ export const store = {
             const block = slide.blocks.find((item) => item.id === id);
             if (block) return block;
         }
-
         return null;
     },
 
@@ -81,7 +80,7 @@ export const store = {
         if (next === currentIndex) return;
         currentIndex = next;
         selectedId = null;
-        emit(STORE_CHANGE.SLIDE);
+        emit("slide");
     },
 
     nextSlide()
@@ -98,23 +97,23 @@ export const store = {
     {
         if (selectedId === id) return;
         selectedId = id;
-        emit(STORE_CHANGE.SELECT);
+        emit("select");
     },
 
     setMode(value)
     {
         if (mode === value) return;
         mode = value;
-        emit(STORE_CHANGE.MODE);
+        emit("mode");
     },
 
     /**
- * Adds and selects a block centered on the requested point.
- * @param {string} type Registered block type.
- * @param {number} [x] Desired horizontal center in slide coordinates.
- * @param {number} [y] Desired vertical center in slide coordinates.
- * @returns {object|null} The new block, or null for an unknown type.
- */
+  * Adds and selects a block centered on the requested point.
+  * @param {string} type Registered block type.
+  * @param {number} [x] Desired horizontal center in slide coordinates.
+  * @param {number} [y] Desired vertical center in slide coordinates.
+  * @returns {object|null} The new block, or null for an unknown type.
+  */
     addBlock(type, x, y)
     {
         const definition = registry.get(type);
@@ -200,5 +199,43 @@ export const store = {
 
         return copy;
     },
+    /** Aligns one block to a logical slide edge or center line. */
+    align(where, id = selectedId)
+    {
+        const block = this.block(id);
+        if (!block) return false;
 
+        const geometry = {};
+        if (where === "left") geometry.x = 0;
+        if (where === "center") geometry.x = Math.round((SLIDE_WIDTH - block.w) / 2);
+        if (where === "right") geometry.x = SLIDE_WIDTH - block.w;
+        if (where === "top") geometry.y = 0;
+        if (where === "middle") geometry.y = Math.round((SLIDE_HEIGHT - block.h) / 2);
+        if (where === "bottom") geometry.y = SLIDE_HEIGHT - block.h;
+
+        return commit(() => Object.assign(block, geometry), "block:geometry");
+    },
+
+    /** Moves one block within the current slide's paint order. */
+    restack(direction, id = selectedId)
+    {
+        const block = this.block(id);
+        if (!block) return false;
+
+        const ordered = [...this.slide().blocks].sort((left, right) => left.z - right.z);
+        const from = ordered.indexOf(block);
+        let to = from;
+        if (direction === "back") to = 0;
+        if (direction === "backward") to = Math.max(0, from - 1);
+        if (direction === "forward") to = Math.min(ordered.length - 1, from + 1);
+        if (direction === "front") to = ordered.length - 1;
+        if (to === from) return false;
+
+        return commit(() =>
+        {
+            ordered.splice(from, 1);
+            ordered.splice(to, 0, block);
+            ordered.forEach((item, index) => { item.z = index; });
+        }, "block:restack");
+    }
 };

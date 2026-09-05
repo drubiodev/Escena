@@ -215,6 +215,50 @@ export function mount($host, $refs)
         pointerAction = null;
     }
 
+    /** Returns resized geometry for the edges named by a handle direction. */
+    function resizeGeometry(origin, direction, deltaX, deltaY)
+    {
+        let { x, y, w, h } = origin;
+
+        if (direction.includes("e")) w += deltaX;
+        if (direction.includes("s")) h += deltaY;
+        if (direction.includes("w"))
+        {
+            w -= deltaX;
+            x += deltaX;
+        }
+        if (direction.includes("n"))
+        {
+            h -= deltaY;
+            y += deltaY;
+        }
+
+        if (w < MIN_BLOCK_SIZE)
+        {
+            if (direction.includes("w")) x -= MIN_BLOCK_SIZE - w;
+            w = MIN_BLOCK_SIZE;
+        }
+        if (h < MIN_BLOCK_SIZE)
+        {
+            if (direction.includes("n")) y -= MIN_BLOCK_SIZE - h;
+            h = MIN_BLOCK_SIZE;
+        }
+
+        return {
+            x: Math.round(x),
+            y: Math.round(y),
+            w: Math.round(w),
+            h: Math.round(h),
+        };
+    }
+
+    interactionLayer.addEventListener("pointerdown", (event) =>
+    {
+        const handle = event.target.closest?.(".handle");
+        if (handle)
+            beginPointerAction(event, "resize", handle.dataset.dir);
+    });
+
     /** Returns slide and sibling alignment targets for one axis. */
     function alignmentTargets(axis, movingId)
     {
@@ -307,51 +351,6 @@ export function mount($host, $refs)
             guide.style.top = slideRect.top - layerRect.top + coordinate * scale + "px";
     }
 
-
-    /** Returns resized geometry for the edges named by a handle direction. */
-    function resizeGeometry(origin, direction, deltaX, deltaY)
-    {
-        let { x, y, w, h } = origin;
-
-        if (direction.includes("e")) w += deltaX;
-        if (direction.includes("s")) h += deltaY;
-        if (direction.includes("w"))
-        {
-            w -= deltaX;
-            x += deltaX;
-        }
-        if (direction.includes("n"))
-        {
-            h -= deltaY;
-            y += deltaY;
-        }
-
-        if (w < MIN_BLOCK_SIZE)
-        {
-            if (direction.includes("w")) x -= MIN_BLOCK_SIZE - w;
-            w = MIN_BLOCK_SIZE;
-        }
-        if (h < MIN_BLOCK_SIZE)
-        {
-            if (direction.includes("n")) y -= MIN_BLOCK_SIZE - h;
-            h = MIN_BLOCK_SIZE;
-        }
-
-        return {
-            x: Math.round(x),
-            y: Math.round(y),
-            w: Math.round(w),
-            h: Math.round(h),
-        };
-    }
-
-    interactionLayer.addEventListener("pointerdown", (event) =>
-    {
-        const handle = event.target.closest?.(".handle");
-        if (handle)
-            beginPointerAction(event, "resize", handle.dataset.dir);
-    });
-
     slidePage.addEventListener("dblclick", (event) =>
     {
         const frame = event.target.closest?.(".frame");
@@ -394,4 +393,30 @@ export function mount($host, $refs)
         });
         editable.addEventListener("blur", finish, { once: true });
     });
+
+    const BLOCK_DRAG_TYPE = "application/x-escena-block";
+
+    wrap.addEventListener("dragover", (event) =>
+    {
+        if (!event.dataTransfer.types.includes(BLOCK_DRAG_TYPE)) return;
+        event.preventDefault();
+        wrap.classList.add("is-drop-target");
+    });
+
+    wrap.addEventListener("dragleave", () =>
+    {
+        wrap.classList.remove("is-drop-target");
+    });
+
+    wrap.addEventListener("drop", (event) =>
+    {
+        wrap.classList.remove("is-drop-target");
+        const type = event.dataTransfer.getData(BLOCK_DRAG_TYPE);
+        if (!registry.has(type)) return;
+
+        event.preventDefault();
+        const point = toLogical(event.clientX, event.clientY);
+        store.addBlock(type, point.x, point.y);
+    });
+
 }

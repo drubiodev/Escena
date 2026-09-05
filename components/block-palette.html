@@ -1,0 +1,76 @@
+<aside class="palette-panel">
+    <header class="panel-header">
+        <span class="panel-kicker">Library</span>
+        <h1>Insert</h1>
+        <p>Drag a block onto the canvas.</p>
+    </header>
+
+    <label class="palette-search">
+        <span class="sr-only">Search blocks</span>
+        <input type="search" placeholder="Search blocks" oninput="setQuery(event.target.value)" />
+    </label>
+
+    <!-- One flat loop avoids LadrillosJS's nested-loop scope limitation. -->
+    <for each="row in rows" key="row.type">
+        <div class="palette-row">
+            <if condition="row.heading">
+                <h2 class="palette-group">{row.heading}</h2>
+            </if>
+
+            <button class="palette-block" type="button" data-type="{row.type}" draggable="true"
+                onclick="addBlock(row.type)" ondragstart="startDrag(event, row.type)">
+                <span class="palette-icon" aria-hidden="true">{row.icon}</span>
+                <span class="palette-label">{row.label}</span>
+                <span class="palette-add" aria-hidden="true">+</span>
+            </button>
+        </div>
+    </for>
+
+    <if condition="rows.length === 0">
+        <p class="palette-empty">No blocks match “{query}”.</p>
+    </if>
+</aside>
+
+<script>
+    let query = "";
+    let rows = [];
+
+    /** Rebuilds the flat visible rows from grouped registry definitions. */
+    function buildRows() {
+        const search = query.trim().toLowerCase();
+        const matches = (block) =>
+            !search ||
+            block.label.toLowerCase().includes(search) ||
+            block.type.toLowerCase().includes(search) ||
+            block.category.toLowerCase().includes(search);
+        const nextRows = [];
+
+        for (const group of window.Escena.registry.byCategory()) {
+            const blocks = group.items.filter(matches);
+            blocks.forEach((block, index) => {
+                nextRows.push({
+                    ...block,
+                    heading: index === 0 ? group.name : "",
+                });
+            });
+        }
+
+        rows = nextRows;
+    }
+
+    function setQuery(value) {
+        query = value;
+        buildRows();
+    }
+
+    function addBlock(type) {
+        $emit("escena:command", { name: "block:add", type });
+    }
+
+    function startDrag(event, type) {
+        event.dataTransfer.setData("application/x-escena-block", type);
+        event.dataTransfer.effectAllowed = "copy";
+    }
+
+    buildRows();
+</script>
