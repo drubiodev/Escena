@@ -75,6 +75,7 @@ export function mount($host, $refs)
     });
 
     const frames = new Map();
+    const fittedImageSources = new Map();
 
     /** Updates existing frames while preserving DOM identity for unchanged blocks. */
     function reconcile()
@@ -117,8 +118,56 @@ export function mount($host, $refs)
         paintSelection(store.selected());
     }
 
-    $listen("escena:change", reconcile);
+    $listen("escena:change", ({ reason }) =>
+    {
+        reconcile();
+        if (reason !== "block:create") return;
+        const id = store.selectedId();
+        requestAnimationFrame(() => fitNewBlockToContent(id));
+    });
     reconcile();
+
+    slidePage.addEventListener("escena:image-load", (event) =>
+    {
+        const frame = event.target.closest?.(".frame");
+        const { width, height, source } = event.detail || {};
+        if (!frame || fittedImageSources.get(frame.dataset.id) === source) return;
+        fittedImageSources.set(frame.dataset.id, source);
+        store.fitBlockToAspect(frame.dataset.id, width / height);
+    });
+
+    function fitNewBlockToContent(id)
+    {
+        const block = store.block(id);
+        const definition = block && registry.get(block.type);
+        const frame = frames.get(id);
+        if (!definition?.editable || !frame || store.selectedId() !== id) return;
+
+        const blockElement = frame.firstElementChild;
+        const editable = (blockElement.shadowRoot || blockElement).querySelector("[data-editable]");
+        if (!editable) return;
+
+        const range = document.createRange();
+        range.selectNodeContents(editable);
+        const rects = [...range.getClientRects()].filter((rect) => rect.width || rect.height);
+        if (!rects.length) return;
+
+        const scale = slidePage.getBoundingClientRect().width / SLIDE_WIDTH;
+        const rows = [];
+        for (const rect of rects)
+        {
+            const top = rect.top / scale;
+            if (!rows.some((row) => Math.abs(row - top) < 1)) rows.push(top);
+        }
+
+        const styles = getComputedStyle(editable);
+        const fontSize = parseFloat(styles.fontSize);
+        const lineHeight = parseFloat(styles.lineHeight) || fontSize * 1.2;
+        store.fitNewBlock(id, {
+            w: Math.min(block.w, Math.ceil(Math.max(...rects.map((rect) => rect.width / scale)) + 12)),
+            h: Math.ceil(lineHeight * Math.max(1, rows.length) + 12),
+        });
+    }
 
     /** Positions the unscaled selection outline over the selected block. */
     function paintSelection(block = store.selected())
@@ -217,7 +266,12 @@ export function mount($host, $refs)
             const angle = (store.block(pointerAction.id).rotate || 0) * Math.PI / 180;
             const cosine = Math.cos(angle);
             const sine = Math.sin(angle);
-            next = resizeGeometry(origin, pointerAction.direction, deltaX * cosine + deltaY * sine, deltaY * cosine - deltaX * sine);
+            const localDeltaX = deltaX * cosine + deltaY * sine;
+            const localDeltaY = deltaY * cosine - deltaX * sine;
+            const block = store.block(pointerAction.id);
+            next = block.type === "image" && block.props.src
+                ? resizeAspectGeometry(origin, pointerAction.direction, localDeltaX, localDeltaY)
+                : resizeGeometry(origin, pointerAction.direction, localDeltaX, localDeltaY);
             const shiftX = next.x - origin.x + (next.w - origin.w) / 2;
             const shiftY = next.y - origin.y + (next.h - origin.h) / 2;
             next.x = Math.round(origin.x + origin.w / 2 + shiftX * cosine - shiftY * sine - next.w / 2);
@@ -288,6 +342,45 @@ export function mount($host, $refs)
             y: Math.round(y),
             w: Math.round(w),
             h: Math.round(h),
+        };
+    }
+
+    function resizeAspectGeometry(origin, direction, deltaX, deltaY)
+    {
+        const horizontal = direction.includes("e") || direction.includes("w");
+        const vertical = direction.includes("n") || direction.includes("s");
+        const candidateWidth = origin.w + (direction.includes("w") ? -deltaX : deltaX);
+        const candidateHeight = origin.h + (direction.includes("n") ? -deltaY : deltaY);
+        let factor;
+
+        if (horizontal && vertical)
+        {
+            const widthFactor = candidateWidth / origin.w;
+            const heightFactor = candidateHeight / origin.h;
+            factor = Math.abs(widthFactor - 1) >= Math.abs(heightFactor - 1)
+                ? widthFactor
+                : heightFactor;
+        }
+        else
+            factor = horizontal ? candidateWidth / origin.w : candidateHeight / origin.h;
+
+        const minimumWidth = Math.min(MIN_BLOCK_SIZE, origin.w);
+        const minimumHeight = Math.min(MIN_BLOCK_SIZE, origin.h);
+        factor = Math.max(factor, minimumWidth / origin.w, minimumHeight / origin.h);
+        const width = origin.w * factor;
+        const height = origin.h * factor;
+        const x = direction.includes("w")
+            ? origin.x + origin.w - width
+            : direction.includes("e") ? origin.x : origin.x + (origin.w - width) / 2;
+        const y = direction.includes("n")
+            ? origin.y + origin.h - height
+            : direction.includes("s") ? origin.y : origin.y + (origin.h - height) / 2;
+
+        return {
+            x: Math.round(x),
+            y: Math.round(y),
+            w: Math.round(width),
+            h: Math.round(height),
         };
     }
 
@@ -390,6 +483,35 @@ export function mount($host, $refs)
             guide.style.top = slideRect.top - layerRect.top + coordinate * scale + "px";
     }
 
+    function placeCaretAtPoint(editable, clientX, clientY)
+    {
+        const root = editable.getRootNode();
+        let node;
+        let offset;
+
+        if (document.caretPositionFromPoint)
+        {
+            const options = root instanceof ShadowRoot ? { shadowRoots: [root] } : undefined;
+            const position = document.caretPositionFromPoint(clientX, clientY, options);
+            node = position?.offsetNode;
+            offset = position?.offset;
+        }
+        else if (document.caretRangeFromPoint)
+        {
+            const pointRange = document.caretRangeFromPoint(clientX, clientY);
+            node = pointRange?.startContainer;
+            offset = pointRange?.startOffset;
+        }
+
+        if (!node || !editable.contains(node)) return;
+        const selection = root.getSelection?.() || window.getSelection();
+        const range = document.createRange();
+        range.setStart(node, offset);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
     slidePage.addEventListener("dblclick", (event) =>
     {
         const frame = event.target.closest?.(".frame");
@@ -406,6 +528,7 @@ export function mount($host, $refs)
         const originalText = editable.innerText;
         editable.setAttribute("contenteditable", "plaintext-only");
         editable.focus();
+        placeCaretAtPoint(editable, event.clientX, event.clientY);
 
         const finish = () =>
         {

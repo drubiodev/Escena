@@ -78,6 +78,7 @@ function buildFields(definition, fields)
     {
         const row = document.createElement("label");
         row.className = "inspector-row";
+        row.classList.toggle("is-toggle", field.type === "toggle");
         row.append(document.createTextNode(field.label));
 
         const control = controlFor(field);

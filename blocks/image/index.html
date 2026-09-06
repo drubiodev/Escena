@@ -1,19 +1,110 @@
-<img class="is-shadow-{shadow}" src="{src}" alt="{alt}">
+<div class="image-frame is-shadow-{shadow}">
+    <img $ref="image" hidden>
+    <div class="image-placeholder" $ref="placeholder" role="img" aria-label="Image placeholder">
+        <span class="placeholder-icon" $ref="icon" aria-hidden="true"></span>
+        <span $ref="message">Image</span>
+    </div>
+</div>
+
+<script type="module">
+    import { createElement, icons } from "lucide";
+
+    let src = "";
+    let alt = "";
+
+    const source = src === true ? "" : String(src);
+    const altText = alt === true ? "" : String(alt);
+    $refs.icon.append(createElement(icons.Image, {
+        width: 42,
+        height: 42,
+        "stroke-width": 1.4,
+        "aria-hidden": "true",
+    }));
+
+    function showPlaceholder(message) {
+        $refs.image.hidden = true;
+        $refs.placeholder.hidden = false;
+        $refs.message.textContent = message;
+        $refs.placeholder.setAttribute("aria-label", message);
+    }
+
+    if (!source)
+        showPlaceholder("Image");
+    else {
+        $refs.image.alt = altText;
+        $refs.image.addEventListener("load", () => {
+            $refs.placeholder.hidden = true;
+            $refs.image.hidden = false;
+            $host.dispatchEvent(new CustomEvent("escena:image-load", {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    width: $refs.image.naturalWidth,
+                    height: $refs.image.naturalHeight,
+                    source,
+                },
+            }));
+        }, { once: true });
+        $refs.image.addEventListener("error", () => showPlaceholder("Image unavailable"), { once: true });
+        $refs.image.src = source;
+    }
+</script>
 
 <style>
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
     :host {
         display: block;
         width: 100%;
         height: 100%;
+        container-type: size;
+    }
+
+    .image-frame {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: min(2.5cqw, 2.5cqh);
     }
 
     img {
+        display: block;
         width: 100%;
         height: 100%;
         object-fit: contain;
     }
 
-    .is-shadow-on {
+    img[hidden],
+    .image-placeholder[hidden] {
+        display: none;
+    }
+
+    .image-placeholder {
+        display: grid;
+        width: 100%;
+        height: 100%;
+        place-content: center;
+        justify-items: center;
+        gap: min(4cqw, 4cqh);
+        border: 2px dashed color-mix(in srgb, var(--s-muted) 48%, transparent);
+        border-radius: inherit;
+        color: var(--s-muted);
+        background-color: color-mix(in srgb, var(--s-muted) 8%, transparent);
+        font: 600 clamp(12px, min(4cqw, 8cqh), 18px)/1 var(--s-font, sans-serif);
+    }
+
+    .placeholder-icon {
+        display: grid;
+        place-items: center;
+        color: var(--s-accent);
+        opacity: 0.72;
+    }
+
+    .image-frame.is-shadow-on {
         filter: drop-shadow(0 18px 24px rgb(0 0 0 / 28%));
     }
 </style>

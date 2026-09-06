@@ -100,6 +100,52 @@ test("copy and paste work across slides without sharing props", async () =>
     assert.equal(store.slide().blocks.length, 0);
 });
 
+test("new block fitting stays within its original undo step", async () =>
+{
+    const { store } = await setup();
+    const block = store.addBlock("heading", 100, 100);
+    assert.equal(store.fitNewBlock(block.id, { w: 240, h: 80 }), true);
+    assert.deepEqual(
+        { x: block.x, y: block.y, w: block.w, h: block.h },
+        { x: 0, y: 60, w: 240, h: 80 }
+    );
+    store.undo();
+    assert.equal(store.block(block.id), null);
+    store.redo();
+    assert.deepEqual(
+        { x: store.block(block.id).x, y: store.block(block.id).y, w: store.block(block.id).w, h: store.block(block.id).h },
+        { x: 0, y: 60, w: 240, h: 80 }
+    );
+});
+
+test("image aspect fitting stays with the source edit", async () =>
+{
+    const { store } = await setup();
+    const block = store.addBlock("image");
+    store.setBlockProp(block.id, "src", "data:image/example");
+    assert.equal(store.fitBlockToAspect(block.id, 3 / 2), true);
+    assert.deepEqual(
+        { x: block.x, y: block.y, w: block.w, h: block.h },
+        { x: 280, y: 120, w: 720, h: 480 }
+    );
+    store.undo();
+    assert.equal(store.block(block.id).props.src, "");
+    assert.deepEqual(
+        { x: store.block(block.id).x, y: store.block(block.id).y, w: store.block(block.id).w, h: store.block(block.id).h },
+        { x: 280, y: 270, w: 720, h: 180 }
+    );
+    store.redo();
+    assert.deepEqual(
+        { src: store.block(block.id).props.src, w: store.block(block.id).w, h: store.block(block.id).h },
+        { src: "data:image/example", w: 720, h: 480 }
+    );
+    store.fitBlockToAspect(block.id, 30);
+    assert.deepEqual(
+        { w: store.block(block.id).w, h: store.block(block.id).h },
+        { w: 960, h: 32 }
+    );
+});
+
 test("invalid imports are atomic and duplicate IDs are repaired", async () =>
 {
     const { store, validateDeck } = await setup();

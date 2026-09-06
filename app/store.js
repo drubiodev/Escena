@@ -21,6 +21,7 @@ const future = [];
 let saveState = "Local draft";
 let lastEdit = { key: null, at: 0 };
 let clipboard = null;
+let pendingFit = null;
 
 function snapshot()
 {
@@ -330,14 +331,89 @@ export const store = {
             rotate: 0,
             props: registry.defaults(type),
         };
+        pendingFit = {
+            id: block.id,
+            centerX: x == null ? SLIDE_WIDTH / 2 : x,
+            centerY: y == null ? SLIDE_HEIGHT / 2 : y,
+        };
 
         commit(() =>
         {
             slide.blocks.push(block);
             selectedId = block.id;
-        }, "block:add");
+        }, "block:create");
 
         return block;
+    },
+
+    /** Fits the currently selected new block without creating a second undo step. */
+    fitNewBlock(id, size)
+    {
+        const block = this.selected();
+        if (!block || block.id !== id || pendingFit?.id !== id) return false;
+
+        const width = Math.round(Math.max(32, Math.min(SLIDE_WIDTH, Number(size.w))));
+        const height = Math.round(Math.max(32, Math.min(SLIDE_HEIGHT, Number(size.h))));
+        if (!Number.isFinite(width) || !Number.isFinite(height)) return false;
+
+        const { centerX, centerY } = pendingFit;
+        pendingFit = null;
+        block.w = width;
+        block.h = height;
+        block.x = Math.round(Math.max(0, Math.min(SLIDE_WIDTH - width, centerX - width / 2)));
+        block.y = Math.round(Math.max(0, Math.min(SLIDE_HEIGHT - height, centerY - height / 2)));
+        persist();
+        emit("block:geometry");
+        return true;
+    },
+
+    /** Fits an image frame to its content without splitting a source change into two undo steps. */
+    fitBlockToAspect(id, aspectRatio)
+    {
+        const block = this.block(id);
+        const ratio = Number(aspectRatio);
+        if (!block || !Number.isFinite(ratio) || ratio <= 0) return false;
+
+        let width = block.w;
+        let height = width / ratio;
+        if (height > SLIDE_HEIGHT)
+        {
+            height = SLIDE_HEIGHT;
+            width = height * ratio;
+        }
+        if (width > SLIDE_WIDTH)
+        {
+            width = SLIDE_WIDTH;
+            height = width / ratio;
+        }
+
+        const minimumScale = Math.max(1, 32 / width, 32 / height);
+        if (width * minimumScale <= SLIDE_WIDTH && height * minimumScale <= SLIDE_HEIGHT)
+        {
+            width *= minimumScale;
+            height *= minimumScale;
+        }
+        else
+        {
+            const visibleScale = Math.max(1, 1 / width, 1 / height);
+            if (width * visibleScale <= SLIDE_WIDTH && height * visibleScale <= SLIDE_HEIGHT)
+            {
+                width *= visibleScale;
+                height *= visibleScale;
+            }
+        }
+
+        width = Math.max(1, width);
+        height = Math.max(1, height);
+        const centerX = block.x + block.w / 2;
+        const centerY = block.y + block.h / 2;
+        block.w = width;
+        block.h = height;
+        block.x = Math.round(Math.max(0, Math.min(SLIDE_WIDTH - width, centerX - width / 2)));
+        block.y = Math.round(Math.max(0, Math.min(SLIDE_HEIGHT - height, centerY - height / 2)));
+        persist();
+        emit("block:geometry");
+        return true;
     },
 
     /** Applies a partial geometry update to one block. */

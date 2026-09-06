@@ -118,6 +118,41 @@ export function installEditor()
     paintIcons();
     const title = document.getElementById("document-title");
     const notes = document.getElementById("speaker-notes");
+    const workspace = document.querySelector(".workspace");
+    const notesHandle = document.getElementById("notes-resize-handle");
+    const setNotesHeight = (height) =>
+    {
+        const maxHeight = Math.max(96, workspace.clientHeight - 160);
+        const nextHeight = Math.round(Math.min(maxHeight, Math.max(96, height)));
+        workspace.style.setProperty("--notes-height", `${nextHeight}px`);
+        notesHandle.setAttribute("aria-valuenow", String(nextHeight));
+    };
+    notesHandle.addEventListener("pointerdown", (event) =>
+    {
+        const startY = event.clientY;
+        const startHeight = document.getElementById("notes-panel").getBoundingClientRect().height;
+        notesHandle.setPointerCapture(event.pointerId);
+        document.body.classList.add("resizing-notes");
+        const move = (moveEvent) => setNotesHeight(startHeight + startY - moveEvent.clientY);
+        const finish = () =>
+        {
+            document.body.classList.remove("resizing-notes");
+            notesHandle.removeEventListener("pointermove", move);
+            notesHandle.removeEventListener("pointerup", finish);
+            notesHandle.removeEventListener("pointercancel", finish);
+        };
+        notesHandle.addEventListener("pointermove", move);
+        notesHandle.addEventListener("pointerup", finish);
+        notesHandle.addEventListener("pointercancel", finish);
+    });
+    notesHandle.addEventListener("keydown", (event) =>
+    {
+        if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+        event.preventDefault();
+        const amount = event.shiftKey ? 40 : 10;
+        const currentHeight = document.getElementById("notes-panel").getBoundingClientRect().height;
+        setNotesHeight(currentHeight + (event.key === "ArrowUp" ? amount : -amount));
+    });
     title.addEventListener("input", () => store.setTitle(title.value));
     notes.addEventListener("input", () => store.setSlideProp("notes", notes.value));
     function refresh()

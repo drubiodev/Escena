@@ -183,6 +183,7 @@ slide-editor {
 }
 
 .workspace {
+    --notes-height: 150px;
     display: grid;
     grid-template-rows: 48px minmax(0, 1fr) 32px;
     min-width: 0;
@@ -326,6 +327,28 @@ slide-editor {
     color: var(--ui-muted);
     font-size: 11px;
     font-weight: 600;
+}
+
+.inspector-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+}
+
+.inspector-fields .inspector-row {
+    grid-column: 1 / -1;
+}
+
+.inspector-fields .inspector-row.is-toggle {
+    grid-column: auto;
+    display: flex;
+    min-width: 0;
+    min-height: 34px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 3px 2px;
 }
 
 .palette-search input,
@@ -1048,7 +1071,7 @@ slide-navigator {
 }
 
 .workspace.has-notes {
-    grid-template-rows: 48px minmax(0, 1fr) 32px 150px;
+    grid-template-rows: 48px minmax(0, 1fr) 32px var(--notes-height);
 }
 
 .workspace-status .status-button {
@@ -1074,9 +1097,47 @@ slide-navigator {
 }
 
 .notes-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     border-top: 1px solid var(--ui-border);
     padding: 14px 20px;
     background: var(--ui-panel);
+}
+
+.notes-resize-handle {
+    position: absolute;
+    z-index: 3;
+    top: -8px;
+    left: 50%;
+    display: grid;
+    width: 44px;
+    height: 16px;
+    place-items: center;
+    border: 1px solid var(--ui-border-strong);
+    border-radius: 5px;
+    color: var(--ui-muted);
+    background: var(--ui-panel-raised);
+    cursor: ns-resize;
+    transform: translateX(-50%);
+    touch-action: none;
+}
+
+.notes-resize-handle:hover,
+.notes-resize-handle:focus-visible {
+    color: var(--ui-text);
+    border-color: var(--ui-accent);
+}
+
+.notes-resize-handle svg {
+    width: 14px;
+    height: 14px;
+}
+
+body.resizing-notes {
+    cursor: ns-resize;
+    user-select: none;
 }
 
 .notes-panel label {
@@ -1087,8 +1148,10 @@ slide-navigator {
 }
 
 .notes-panel textarea {
+    flex: 1;
+    min-height: 0;
     width: 100%;
-    height: 90px;
+    height: auto;
     border: 0;
     resize: none;
     background: transparent;
@@ -1241,9 +1304,22 @@ slide-navigator {
 }
 
 .inspector-row input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--ui-accent);
+    appearance: none;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 20px;
+    border-color: var(--ui-border-strong);
+    border-radius: 999px;
+    padding: 0;
+    background-color: var(--ui-panel-raised);
+    background-image: radial-gradient(circle at 9px 50%, var(--ui-muted) 0 5px, transparent 5.5px);
+    cursor: pointer;
+}
+
+.inspector-row input[type="checkbox"]:checked {
+    border-color: var(--ui-accent);
+    background-color: var(--ui-accent);
+    background-image: radial-gradient(circle at calc(100% - 9px) 50%, #171614 0 5px, transparent 5.5px);
 }
 
 .inspector-actions[aria-label="Alignment"] {
@@ -1726,7 +1802,7 @@ dialog::backdrop {
     }
 
     .workspace.has-notes {
-        grid-template-rows: 48px minmax(0, 1fr) 32px 110px;
+        --notes-height: 110px;
     }
 
     .notes-panel {
@@ -1734,7 +1810,7 @@ dialog::backdrop {
     }
 
     .notes-panel textarea {
-        height: 65px;
+        height: auto;
     }
 
     property-inspector {
