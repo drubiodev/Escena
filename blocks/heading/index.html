@@ -17,4 +17,14 @@
         line-height: 1.04;
         overflow-wrap: break-word;
     }
+
+    :host([data-empty]) .heading::before {
+        content: "Enter heading";
+        color: var(--s-muted);
+        opacity: 0.65;
+    }
+
+    :host([data-empty]) .heading:focus::before {
+        content: none;
+    }
 </style>

@@ -23,6 +23,7 @@ export async function boot()
 {
     configure({ cacheSize: 10 });
 
+    // Register built-in blocks in the registry
     registry.defineMany(BUILT_IN_BLOCKS);
 
     window.Escena = {

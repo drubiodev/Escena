@@ -20,6 +20,12 @@ export function createBlockEl(block)
     for (const prop of definition.props)
     {
         const value = block.props?.[prop.key] ?? prop.value;
+        if (prop.key === definition.editable && value === "")
+        {
+            element.toggleAttribute("data-empty", true);
+            element.setAttribute(prop.key, " ");
+            continue;
+        }
         // Custom-element props cross the DOM boundary as attributes.
         element.setAttribute(prop.key, String(value));
     }

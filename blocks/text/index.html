@@ -24,6 +24,16 @@
         outline: none;
     }
 
+    :host([data-empty]) .t::before {
+        content: "Enter text";
+        color: var(--s-muted);
+        opacity: 0.65;
+    }
+
+    :host([data-empty]) .t:focus::before {
+        content: none;
+    }
+
     .is-left {
         text-align: left;
     }
