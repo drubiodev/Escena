@@ -140,6 +140,10 @@ export function mount($host, $refs)
         }
 
         store.select(frame.dataset.id);
+        const interactive = event.composedPath().some((target) =>
+            target.matches?.("video, audio, button, input, select, textarea, a")
+        );
+        if (interactive) return;
         beginPointerAction(event, "move");
     });
 
