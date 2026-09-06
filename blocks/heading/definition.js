@@ -8,7 +8,7 @@ export default {
     size: { w: 960, h: 190 },
     editable: "text",
     props: [
-        { key: "text", label: "Text", type: "textarea", value: "A heading" },
+        { key: "text", label: "Text", type: "input", value: "A heading" },
         { key: "size", label: "Size", type: "range", value: "76", min: 24, max: 160 },
     ],
 };

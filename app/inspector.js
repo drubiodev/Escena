@@ -32,6 +32,7 @@ function controlFor(field)
         return select;
     }
 
+    // default
     const input = document.createElement("input");
     input.type = ["color", "number", "range"].includes(field.type)
         ? field.type
