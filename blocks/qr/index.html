@@ -1,0 +1,178 @@
+<div class="qr-block">
+    <div class="qr-card is-shadow-{shadow}" $ref="card">
+        <span class="corner top-left" aria-hidden="true"></span>
+        <span class="corner top-right" aria-hidden="true"></span>
+        <span class="corner bottom-left" aria-hidden="true"></span>
+        <span class="corner bottom-right" aria-hidden="true"></span>
+        <canvas $ref="canvas" aria-label="QR code"></canvas>
+    </div>
+    <span class="qr-caption" $ref="caption"></span>
+    <span class="qr-message" $ref="message" hidden></span>
+</div>
+
+<script type="module">
+    import { drawQr } from "./encoder.js";
+
+    let content = "";
+    let dark = "#111111";
+    let light = "#ffffff";
+    let margin = 4;
+    let caption = "";
+    let accent = "#d2500f";
+    let shadow = "on";
+
+    const captionText = caption === true ? "" : String(caption);
+    $refs.caption.textContent = captionText;
+    $refs.caption.hidden = !captionText;
+    $refs.card.style.setProperty("--qr-accent", String(accent));
+
+    const value = content === true ? "" : String(content);
+    if (!value) {
+        $refs.canvas.hidden = true;
+        $refs.message.hidden = false;
+        $refs.message.textContent = "Enter QR content";
+    }
+    else {
+        try {
+            drawQr($refs.canvas, value, {
+                dark: String(dark),
+                light: String(light),
+                margin: Number(margin),
+            });
+        }
+        catch (error) {
+            $refs.canvas.hidden = true;
+            $refs.message.hidden = false;
+            $refs.message.textContent = error.message;
+        }
+    }
+</script>
+
+<style>
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .qr-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: min(3cqw, 3cqh);
+        width: 100%;
+        height: 100%;
+        container-type: size;
+    }
+
+    .qr-card {
+        position: relative;
+        width: min(78cqw, 78cqh);
+        height: min(78cqw, 78cqh);
+        padding: min(5cqw, 5cqh);
+        border: 1px solid rgb(28 27 25 / 12%);
+        border-radius: min(5cqw, 5cqh);
+        background: #ffffff;
+        transition: transform 220ms ease, box-shadow 220ms ease;
+    }
+
+    .qr-card.is-shadow-on {
+        box-shadow:
+            0 2px 4px rgb(28 27 25 / 8%),
+            0 14px 30px rgb(28 27 25 / 13%),
+            0 28px 52px color-mix(in srgb, var(--qr-accent) 18%, transparent);
+    }
+
+    .qr-card.is-shadow-on:hover {
+        transform: translateY(-3px);
+        box-shadow:
+            0 2px 4px rgb(28 27 25 / 8%),
+            0 18px 36px rgb(28 27 25 / 16%),
+            0 34px 60px color-mix(in srgb, var(--qr-accent) 25%, transparent);
+    }
+
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: min(1.5cqw, 1.5cqh);
+        image-rendering: pixelated;
+    }
+
+    .corner {
+        position: absolute;
+        width: min(7cqw, 7cqh);
+        height: min(7cqw, 7cqh);
+        border: min(0.65cqw, 0.65cqh) solid var(--qr-accent);
+        pointer-events: none;
+    }
+
+    .top-left {
+        top: min(2cqw, 2cqh);
+        left: min(2cqw, 2cqh);
+        border-right: 0;
+        border-bottom: 0;
+        border-top-left-radius: min(2.5cqw, 2.5cqh);
+    }
+
+    .top-right {
+        top: min(2cqw, 2cqh);
+        right: min(2cqw, 2cqh);
+        border-left: 0;
+        border-bottom: 0;
+        border-top-right-radius: min(2.5cqw, 2.5cqh);
+    }
+
+    .bottom-left {
+        bottom: min(2cqw, 2cqh);
+        left: min(2cqw, 2cqh);
+        border-right: 0;
+        border-top: 0;
+        border-bottom-left-radius: min(2.5cqw, 2.5cqh);
+    }
+
+    .bottom-right {
+        right: min(2cqw, 2cqh);
+        bottom: min(2cqw, 2cqh);
+        border-left: 0;
+        border-top: 0;
+        border-bottom-right-radius: min(2.5cqw, 2.5cqh);
+    }
+
+    .qr-caption {
+        flex: 0 0 auto;
+        min-height: 17px;
+        max-width: 88%;
+        overflow: hidden;
+        color: var(--s-muted, #6f6a62);
+        font: 600 14px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+        letter-spacing: 0;
+        text-align: center;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .qr-message {
+        color: var(--s-muted);
+        font: 24px/1.3 var(--s-font);
+        text-align: center;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .qr-card {
+            transition: none;
+        }
+
+        .qr-card.is-shadow-on:hover {
+            transform: none;
+        }
+    }
+</style>

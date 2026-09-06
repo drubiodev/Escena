@@ -2,7 +2,7 @@
 export default {
     type: "image",
     label: "Image",
-    category: "image",
+    category: "Media",
     // Resolve from this block folder, independent of the page that imports it.
     path: new URL("./index.html", import.meta.url).href,
     size: { w: 720, h: 180 },
