@@ -1,0 +1,10 @@
+<div class="navigator-panel">
+    <header class="navigator-header"><span class="panel-kicker">Your story</span><span $ref="count"
+            class="slide-count"></span></header>
+    <div class="slide-list" $ref="list" aria-label="Slides"></div>
+    <button class="add-slide-button" data-command="slide:add" data-value="title"><span data-icon="Plus"></span>New
+        slide</button>
+</div>
+<script>
+    window.Escena.editor.mountNavigator($host, $refs);
+</script>

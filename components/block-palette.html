@@ -7,7 +7,7 @@
 
     <label class="palette-search">
         <span class="sr-only">Search blocks</span>
-        <input type="search" placeholder="Search blocks" oninput="setQuery(event.target.value)" />
+        <input type="search" placeholder="Search blocks" />
     </label>
 
     <!-- One flat loop avoids LadrillosJS's nested-loop scope limitation. -->
@@ -17,8 +17,7 @@
                 <h2 class="palette-group">{row.heading}</h2>
             </if>
 
-            <button class="palette-block" type="button" data-type="{row.type}" draggable="true"
-                onclick="addBlock(row.type)" ondragstart="startDrag(event, row.type)">
+            <button class="palette-block" type="button" data-type="{row.type}" draggable="true">
                 <span class="palette-icon" aria-hidden="true">{row.icon}</span>
                 <span class="palette-label">{row.label}</span>
                 <span class="palette-add" aria-hidden="true">+</span>
@@ -58,19 +57,24 @@
         rows = nextRows;
     }
 
-    function setQuery(value) {
-        query = value;
+    $host.addEventListener("input", (event) => {
+        if (!event.target.matches('input[type="search"]')) return;
+        query = event.target.value;
         buildRows();
-    }
+    });
 
-    function addBlock(type) {
-        $emit("escena:command", { name: "block:add", type });
-    }
+    $host.addEventListener("click", (event) => {
+        const button = event.target.closest(".palette-block");
+        if (!button || !$host.contains(button)) return;
+        $emit("escena:command", { name: "block:add", type: button.dataset.type });
+    });
 
-    function startDrag(event, type) {
-        event.dataTransfer.setData("application/x-escena-block", type);
+    $host.addEventListener("dragstart", (event) => {
+        const button = event.target.closest(".palette-block");
+        if (!button || !$host.contains(button)) return;
+        event.dataTransfer.setData("application/x-escena-block", button.dataset.type);
         event.dataTransfer.effectAllowed = "copy";
-    }
+    });
 
     buildRows();
 </script>

@@ -41,6 +41,7 @@ export const registry = {
 
         for (const prop of props)
         {
+            if (prop.type === "input") prop.type = "text";
             if (PROP_TYPES.includes(prop.type)) continue;
             console.warn(
                 `Block "${definition.type}" property "${prop.key}" uses ` +

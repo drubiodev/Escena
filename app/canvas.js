@@ -25,20 +25,21 @@ export function mount($host, $refs)
         guideH,
         readout,
     } = $refs;
+    let zoom = 1;
 
     /** Scales and centers the fixed slide inside the component host. */
     function fitSlide()
     {
-        const scale = Math.min(
+        const scale = zoom * Math.min(
             wrap.clientWidth / SLIDE_WIDTH,
             wrap.clientHeight / SLIDE_HEIGHT
         );
 
         slideZoom.style.transform = `scale(${scale})`;
-        slideZoom.style.left =
-            (wrap.clientWidth - SLIDE_WIDTH * scale) / 2 + "px";
-        slideZoom.style.top =
-            (wrap.clientHeight - SLIDE_HEIGHT * scale) / 2 + "px";
+        slideZoom.style.left = Math.max(0, (wrap.clientWidth - SLIDE_WIDTH * scale) / 2) + "px";
+        slideZoom.style.top = Math.max(0, (wrap.clientHeight - SLIDE_HEIGHT * scale) / 2) + "px";
+        wrap.style.overflow = zoom > 1 ? "auto" : "hidden";
+        document.getElementById("zoom-value").textContent = zoom === 1 ? "Fit" : `${Math.round(scale * 100)}%`;
         paintSelection();
     }
 
@@ -63,6 +64,15 @@ export function mount($host, $refs)
     const resizeObserver = new ResizeObserver(fitSlide);
     resizeObserver.observe(wrap);
     fitSlide();
+    wrap.addEventListener("scroll", () => paintSelection());
+    $listen("escena:command", ({ name }) =>
+    {
+        if (!name?.startsWith("zoom:")) return;
+        if (name === "zoom:fit") zoom = 1;
+        if (name === "zoom:in") zoom = Math.min(4, zoom + 0.25);
+        if (name === "zoom:out") zoom = Math.max(0.5, zoom - 0.25);
+        fitSlide();
+    });
 
     const frames = new Map();
 
@@ -82,7 +92,7 @@ export function mount($host, $refs)
 
             if (!frame)
             {
-                frame = createFrame(block);
+                frame = createFrame(block, { preview: true });
                 frame.dataset.props = JSON.stringify(block.props || {});
                 frames.set(block.id, frame);
                 slidePage.appendChild(frame);
@@ -93,7 +103,7 @@ export function mount($host, $refs)
             if (frame.dataset.props !== props)
             {
                 frame.dataset.props = props;
-                frame.replaceChildren(createBlockEl(block));
+                frame.replaceChildren(createBlockEl(block, { preview: true }));
             }
         }
 
@@ -128,6 +138,7 @@ export function mount($host, $refs)
         selection.style.top = slideRect.top - layerRect.top + block.y * scale + "px";
         selection.style.width = block.w * scale + "px";
         selection.style.height = block.h * scale + "px";
+        selection.style.transform = `rotate(${block.rotate || 0}deg)`;
     }
 
     slidePage.addEventListener("pointerdown", (event) =>
@@ -142,6 +153,7 @@ export function mount($host, $refs)
         store.select(frame.dataset.id);
         const interactive = event.composedPath().some((target) =>
             target.matches?.("video, audio, button, input, select, textarea, a")
+            || target.isContentEditable
         );
         if (interactive) return;
         beginPointerAction(event, "move");
@@ -154,7 +166,7 @@ export function mount($host, $refs)
     function beginPointerAction(event, mode, direction = "")
     {
         const block = store.selected();
-        if (!block) return;
+        if (!block || event.button !== 0) return;
 
         pointerAction = {
             id: block.id,
@@ -169,6 +181,7 @@ export function mount($host, $refs)
 
         window.addEventListener("pointermove", previewPointerAction);
         window.addEventListener("pointerup", finishPointerAction, { once: true });
+        window.addEventListener("pointercancel", cancelPointerAction, { once: true });
         event.preventDefault();
     }
 
@@ -176,6 +189,7 @@ export function mount($host, $refs)
     function previewPointerAction(event)
     {
         if (!pointerAction) return;
+        if (!store.block(pointerAction.id)) { cancelPointerAction(); return; }
 
         const scale = slidePage.getBoundingClientRect().width / SLIDE_WIDTH;
         const deltaX = (event.clientX - pointerAction.startClientX) / scale;
@@ -198,11 +212,20 @@ export function mount($host, $refs)
         }
         else
         {
-            next = resizeGeometry(origin, pointerAction.direction, deltaX, deltaY);
+            // Handles rotate with the block. First resize in the block's own
+            // coordinate space, then rotate the center movement back to the slide.
+            const angle = (store.block(pointerAction.id).rotate || 0) * Math.PI / 180;
+            const cosine = Math.cos(angle);
+            const sine = Math.sin(angle);
+            next = resizeGeometry(origin, pointerAction.direction, deltaX * cosine + deltaY * sine, deltaY * cosine - deltaX * sine);
+            const shiftX = next.x - origin.x + (next.w - origin.w) / 2;
+            const shiftY = next.y - origin.y + (next.h - origin.h) / 2;
+            next.x = Math.round(origin.x + origin.w / 2 + shiftX * cosine - shiftY * sine - next.w / 2);
+            next.y = Math.round(origin.y + origin.h / 2 + shiftX * sine + shiftY * cosine - next.h / 2);
         }
 
         pointerAction.next = next;
-        pointerAction.moved = true;
+        pointerAction.moved = Math.abs(deltaX) + Math.abs(deltaY) > 1;
         const frame = frames.get(pointerAction.id);
         if (frame) styleFrame(frame, { ...store.block(pointerAction.id), ...next });
         paintSelection({ ...store.block(pointerAction.id), ...next });
@@ -212,12 +235,24 @@ export function mount($host, $refs)
     function finishPointerAction()
     {
         window.removeEventListener("pointermove", previewPointerAction);
+        window.removeEventListener("pointercancel", cancelPointerAction);
         if (pointerAction?.moved)
             store.moveBlock(pointerAction.id, pointerAction.next);
+        else reconcile();
         paintGuide(guideV, null, "x");
         paintGuide(guideH, null, "y");
         pointerAction = null;
     }
+
+    function cancelPointerAction()
+    {
+        if (pointerAction) pointerAction.moved = false;
+        window.removeEventListener("pointerup", finishPointerAction);
+        finishPointerAction();
+        reconcile();
+    }
+
+    window.addEventListener("keydown", (event) => { if (event.key === "Escape" && pointerAction) cancelPointerAction(); });
 
     /** Returns resized geometry for the edges named by a handle direction. */
     function resizeGeometry(origin, direction, deltaX, deltaY)
@@ -368,6 +403,7 @@ export function mount($host, $refs)
         if (!editable) return;
 
         let save = true;
+        const originalText = editable.innerText;
         editable.setAttribute("contenteditable", "plaintext-only");
         editable.focus();
 
@@ -377,10 +413,11 @@ export function mount($host, $refs)
             if (save)
                 store.setBlockProp(block.id, definition.editable, editable.innerText.trim());
             else
-                reconcile();
+                editable.innerText = originalText;
+            editable.removeEventListener("keydown", onEditKey);
         };
 
-        editable.addEventListener("keydown", (keyEvent) =>
+        const onEditKey = (keyEvent) =>
         {
             keyEvent.stopPropagation();
             if (keyEvent.key === "Escape")
@@ -394,7 +431,8 @@ export function mount($host, $refs)
                 keyEvent.preventDefault();
                 editable.blur();
             }
-        });
+        };
+        editable.addEventListener("keydown", onEditKey);
         editable.addEventListener("blur", finish, { once: true });
     });
 

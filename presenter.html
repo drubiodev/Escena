@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presenter - Escena</title>
+    <link rel="stylesheet" href="./app/theme.css">
+    <script
+        type="importmap">{"imports":{"ladrillosjs":"https://cdn.jsdelivr.net/npm/ladrillosjs@2.1.3/dist/index.js","lucide":"https://cdn.jsdelivr.net/npm/lucide@0.468.0/+esm"}}</script>
+</head>
+
+<body class="presenter-body">
+    <header class="presenter-header"><span class="brand-name">Escena</span><span id="presenter-status"
+            role="status">Connecting to presentation...</span><time id="presenter-clock">00:00</time><button
+            class="icon-button" data-remote="resetTimer" title="Reset timer" aria-label="Reset timer"><span
+                data-icon="RotateCcw"></span></button></header>
+    <main class="presenter-layout">
+        <section class="presenter-current">
+            <h2>Current slide</h2>
+            <div class="presenter-preview">
+                <div class="slide-page player-surface" id="current-slide"></div>
+            </div>
+        </section>
+        <section class="presenter-next">
+            <h2>Up next</h2>
+            <div class="presenter-preview">
+                <div class="slide-page player-surface" id="next-slide"></div>
+            </div>
+            <p id="next-label"></p>
+        </section>
+        <section class="presenter-notes">
+            <h2>Speaker notes</h2>
+            <p id="presenter-notes"></p>
+        </section>
+    </main>
+    <footer class="presenter-footer"><button class="command-button" data-remote="prev"><span
+                data-icon="ChevronLeft"></span>Previous</button><span id="presenter-counter"></span><button
+            class="command-button primary" data-remote="next">Next<span data-icon="ChevronRight"></span></button><span
+            class="toolbar-spacer"></span><button class="icon-button" data-remote="blackout" title="Blackout screen"
+            aria-label="Blackout screen"><span data-icon="MonitorOff"></span></button><button class="command-button"
+            data-remote="close">End presentation</button></footer>
+    <script
+        type="module">import { bootPresenter } from "./app/presenter.js"; bootPresenter().catch((error) => { document.getElementById("presenter-status").textContent = error.message; });</script>
+</body>
+
+</html>

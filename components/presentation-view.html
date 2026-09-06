@@ -1,0 +1,30 @@
+<section class="presentation-shell" role="dialog" aria-label="Presentation" aria-modal="true" tabindex="-1">
+    <div class="presentation-stage" $ref="stageWrap">
+        <div class="slide-page player-surface" $ref="surface"></div>
+    </div>
+    <div class="presentation-controls-zone">
+        <div class="presentation-controls">
+            <button class="icon-button" data-present="close" aria-label="Exit presentation"
+                title="Exit presentation (Escape)"><span data-icon="X"></span></button>
+            <span class="toolbar-separator"></span>
+            <button class="icon-button" data-present="prev" aria-label="Previous slide" title="Previous slide"><span
+                    data-icon="ChevronLeft"></span></button>
+            <span class="presentation-counter" $ref="counter" aria-live="polite"></span>
+            <button class="icon-button" data-present="next" aria-label="Next slide" title="Next slide"><span
+                    data-icon="ChevronRight"></span></button>
+            <span class="toolbar-separator"></span>
+            <button class="icon-button" data-present="overview" aria-label="Slide overview" title="Slide overview"><span
+                    data-icon="LayoutGrid"></span></button>
+            <button class="icon-button" data-present="blackout" aria-label="Blackout screen"
+                title="Blackout screen (B)"><span data-icon="MonitorOff"></span></button>
+            <button class="icon-button" data-present="presenter" aria-label="Open presenter window"
+                title="Open presenter window"><span data-icon="PanelTop"></span></button>
+            <button class="icon-button" data-present="fullscreen" aria-label="Toggle fullscreen"
+                title="Toggle fullscreen (F)"><span data-icon="Maximize"></span></button>
+            <span class="presentation-time" $ref="timer">00:00</span>
+        </div>
+    </div>
+</section>
+<script>
+    window.Escena.presentation.mount($host, $refs);
+</script>

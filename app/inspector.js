@@ -1,6 +1,7 @@
 import { $listen } from "ladrillosjs";
 import { registry } from "./registry.js";
 import { store } from "./store.js";
+import { paintIcons } from "./icons.js";
 
 /**
  * Creates the native form control requested by a prop definition.
@@ -16,7 +17,14 @@ function controlFor(field)
         return textarea;
     }
 
-    if (field.type === "select" || field.type === "toggle")
+    if (field.type === "toggle")
+    {
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        return input;
+    }
+
+    if (field.type === "select")
     {
         const select = document.createElement("select");
         const options = field.type === "toggle"
@@ -81,7 +89,7 @@ function buildFields(definition, fields)
         {
             const selected = store.selected();
             if (selected)
-                store.setBlockProp(selected.id, field.key, control.value);
+                store.setBlockProp(selected.id, field.key, control.type === "checkbox" ? (control.checked ? "on" : "off") : control.value);
         });
         row.appendChild(control);
 
@@ -117,6 +125,12 @@ export function mount($host, $refs)
 {
     const { empty, blockPane, fields } = $refs;
     let renderedType = null;
+    paintIcons($host);
+
+    $host.addEventListener("input", (event) =>
+    {
+        if (event.target.dataset.slide) store.setSlideProp(event.target.dataset.slide, event.target.value);
+    });
 
     $host.addEventListener("input", (event) =>
     {
@@ -135,6 +149,10 @@ export function mount($host, $refs)
         const button = event.target.closest("button");
         if (!button) return;
 
+        if (button.dataset.themeChoice) store.setTheme(button.dataset.themeChoice);
+        if (button.hasAttribute("data-reset-background")) store.setSlideProp("background", "");
+        if (button.dataset.slideMove) store.moveSlide(store.currentIndex(), store.currentIndex() + Number(button.dataset.slideMove));
+
         if (button.dataset.align) store.align(button.dataset.align);
         if (button.dataset.restack) store.restack(button.dataset.restack);
         if (button.dataset.action === "duplicate") store.duplicateBlock();
@@ -150,7 +168,8 @@ export function mount($host, $refs)
         for (const control of fields.querySelectorAll("[data-key]"))
         {
             if (control === document.activeElement) continue;
-            control.value = block.props[control.dataset.key] ?? "";
+            if (control.type === "checkbox") control.checked = block.props[control.dataset.key] === "on";
+            else control.value = block.props[control.dataset.key] ?? "";
         }
         for (const control of blockPane.querySelectorAll("[data-geo]"))
         {
@@ -165,6 +184,28 @@ export function mount($host, $refs)
         const block = store.selected();
         empty.hidden = Boolean(block);
         blockPane.hidden = !block;
+        for (const control of empty.querySelectorAll("[data-slide]"))
+        {
+            if (document.activeElement === control) continue;
+            const backgrounds = { default: "#f8f4ee", paper: "#ffffff", midnight: "#171c23", forest: "#163e36" };
+            control.value = store.slide()[control.dataset.slide] || (control.type === "color" ? backgrounds[store.theme()] : "");
+        }
+        for (const choice of empty.querySelectorAll("[data-theme-choice]")) choice.setAttribute("aria-pressed", String(choice.dataset.themeChoice === store.theme()));
+        empty.querySelector('[data-slide-move="-1"]').disabled = store.currentIndex() === 0;
+        empty.querySelector('[data-slide-move="1"]').disabled = store.currentIndex() === store.slideCount() - 1;
+        $refs.layers.replaceChildren(...[...store.slide().blocks].sort((left, right) => right.z - left.z).map((item) =>
+        {
+            const button = document.createElement("button");
+            button.className = "layer-row";
+            button.setAttribute("aria-pressed", String(item.id === store.selectedId()));
+            const type = document.createElement("span");
+            type.textContent = registry.get(item.type)?.label || item.type;
+            const label = document.createElement("span");
+            label.textContent = item.props.text || item.props.alt || item.type;
+            button.append(type, label);
+            button.addEventListener("click", () => store.select(item.id));
+            return button;
+        }));
         if (!block) return;
 
         if (renderedType !== block.type)
@@ -178,7 +219,7 @@ export function mount($host, $refs)
     $listen("escena:change", ({ reason }) =>
     {
         if (["saved", "mode", "timer"].includes(reason)) return;
-        if (["block:prop", "block:geometry", "block:restack"].includes(reason))
+        if (["block:prop", "block:geometry"].includes(reason))
             paint();
         else
             refresh();

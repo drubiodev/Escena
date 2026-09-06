@@ -9,7 +9,8 @@
     <script type="importmap">
         {
             "imports": {
-                "ladrillosjs": "https://cdn.jsdelivr.net/npm/ladrillosjs@2.1.3/dist/index.js"
+                "ladrillosjs": "https://cdn.jsdelivr.net/npm/ladrillosjs@2.1.3/dist/index.js",
+                "lucide": "https://cdn.jsdelivr.net/npm/lucide@0.468.0/+esm"
             }
         }
     </script>
@@ -23,42 +24,64 @@
             </div>
 
             <div class="document-title">
-                <span class="document-name">Escena rebuild</span>
-                <span class="document-state"><span class="status-dot"></span>Local draft</span>
+                <input class="document-name" id="document-title" aria-label="Presentation title" maxlength="200"
+                    value="Untitled presentation">
+                <span class="document-state" id="save-state" role="status">Local draft</span>
             </div>
 
             <div class="app-bar-meta">
-                <span class="profile-mark" aria-label="Current workspace">DR</span>
+                <button class="command-button present-button" data-command="present" aria-label="Present"
+                    title="Present"><span data-icon="Play"></span><span>Present</span></button>
             </div>
         </header>
 
         <main class="editor-layout">
-            <block-palette></block-palette>
+            <aside class="library-sidebar">
+                <div class="sidebar-tabs" role="tablist" aria-label="Library">
+                    <button id="slides-tab" role="tab" aria-selected="true" aria-controls="slides-panel"
+                        data-panel="slides"><span data-icon="PanelsTopLeft"></span>Slides</button>
+                    <button id="insert-tab" role="tab" aria-selected="false" aria-controls="insert-panel"
+                        data-panel="insert"><span data-icon="Plus"></span>Insert</button>
+                </div>
+                <slide-navigator id="slides-panel" role="tabpanel" aria-labelledby="slides-tab"></slide-navigator>
+                <block-palette id="insert-panel" role="tabpanel" aria-labelledby="insert-tab" hidden></block-palette>
+            </aside>
             <section class="workspace">
-                <header class="workspace-bar">
-                    <div>
-                        <span class="workspace-kicker">Canvas</span>
-                        <strong>Slide 01</strong>
-                    </div>
-                </header>
+                <editor-toolbar></editor-toolbar>
 
                 <div class="slide-area">
                     <slide-editor></slide-editor>
                 </div>
 
                 <footer class="workspace-status">
-                    <span>1280 &times; 720</span>
-                    <span>Slide 1 of 1</span>
+                    <button class="status-button" data-command="notes" aria-expanded="false"><span
+                            data-icon="NotebookPen"></span>Notes</button>
+                    <span id="slide-counter">Slide 1 of 1</span>
+                    <div class="zoom-controls"><span>16:9</span><button class="icon-button" data-command="zoom:out"
+                            title="Zoom out" aria-label="Zoom out"><span data-icon="Minus"></span></button><button
+                            class="status-button" id="zoom-value" data-command="zoom:fit"
+                            title="Fit slide">Fit</button><button class="icon-button" data-command="zoom:in"
+                            title="Zoom in" aria-label="Zoom in"><span data-icon="Plus"></span></button></div>
                 </footer>
+                <section class="notes-panel" id="notes-panel" hidden><label for="speaker-notes">Speaker
+                        notes</label><textarea id="speaker-notes" placeholder="Add speaker notes..."></textarea>
+                </section>
             </section>
             <property-inspector></property-inspector>
         </main>
     </div>
-    <div id="app-overlays"></div>
+    <div id="app-overlays"><presentation-view hidden></presentation-view></div>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <input id="open-file" type="file" accept=".json,.escena,application/json" hidden>
 
     <script type="module">
         import { boot } from "./app/boot.js";
-        boot();
+        boot().catch((error) => {
+            console.error(error);
+            const notice = document.getElementById("toast");
+            notice.hidden = false;
+            notice.textContent = "Escena could not start. Check your connection and reload.";
+        });
     </script>
 </body>
 

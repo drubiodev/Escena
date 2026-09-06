@@ -1,15 +1,37 @@
 <aside class="inspector-panel">
     <header class="panel-header inspector-header">
-        <span class="panel-kicker">Selected block</span>
+        <span class="panel-kicker">Properties</span>
         <h1>Design</h1>
         <p>Fine-tune content and layout.</p>
     </header>
 
-    <div class="inspector-empty" $ref="empty">
-        <span class="empty-icon" aria-hidden="true"></span>
-        <strong>Nothing selected</strong>
-        <span>Select a block on the canvas to start editing.</span>
-    </div>
+    <section $ref="empty">
+        <label class="inspector-row">Slide name<input data-slide="name" maxlength="120" aria-label="Slide name"></label>
+        <h2 class="inspector-section-title">Presentation theme</h2>
+        <div class="theme-options" aria-label="Presentation theme">
+            <button class="theme-option" data-theme-choice="default" title="Studio" aria-label="Studio theme"><span
+                    style="background:#f8f4ee;color:#21211f">Aa<i style="background:#df5134"></i></span>Studio</button>
+            <button class="theme-option" data-theme-choice="paper" title="Editorial" aria-label="Editorial theme"><span
+                    style="background:#fff;color:#202827;font-family:Georgia,serif">Aa<i
+                        style="background:#187b78"></i></span>Editorial</button>
+            <button class="theme-option" data-theme-choice="midnight" title="Midnight" aria-label="Midnight theme"><span
+                    style="background:#171c23;color:#f5f6f8">Aa<i
+                        style="background:#83d9ef"></i></span>Midnight</button>
+            <button class="theme-option" data-theme-choice="forest" title="Botanical" aria-label="Botanical theme"><span
+                    style="background:#163e36;color:#f5f6ed">Aa<i
+                        style="background:#e7c96c"></i></span>Botanical</button>
+        </div>
+        <label class="inspector-row">Slide background<input type="color" data-slide="background"
+                aria-label="Slide background"></label>
+        <button class="command-button" data-reset-background>Reset background</button>
+        <h2 class="inspector-section-title">Slide order</h2>
+        <div class="inspector-actions">
+            <button data-slide-move="-1" title="Move slide earlier" aria-label="Move slide earlier"><span
+                    data-icon="ArrowUp"></span></button>
+            <button data-slide-move="1" title="Move slide later" aria-label="Move slide later"><span
+                    data-icon="ArrowDown"></span></button>
+        </div>
+    </section>
 
     <section $ref="blockPane" hidden>
         <h2 class="inspector-section-title">Content</h2>
@@ -33,16 +55,24 @@
                 <span>H</span>
                 <input type="number" data-geo="h" min="32" aria-label="Height" />
             </label>
+            <label class="geometry-field"><span>R</span><input type="number" data-geo="rotate" min="-360" max="360"
+                    aria-label="Rotation in degrees"></label>
         </fieldset>
 
         <h2 class="inspector-section-title">Alignment</h2>
         <div class="inspector-actions" aria-label="Alignment">
-            <button type="button" data-align="left">Left</button>
-            <button type="button" data-align="center">Center</button>
-            <button type="button" data-align="right">Right</button>
-            <button type="button" data-align="top">Top</button>
-            <button type="button" data-align="middle">Middle</button>
-            <button type="button" data-align="bottom">Bottom</button>
+            <button type="button" data-align="left" title="Align left" aria-label="Align left"><span
+                    data-icon="AlignStartVertical"></span></button>
+            <button type="button" data-align="center" title="Align horizontal center"
+                aria-label="Align horizontal center"><span data-icon="AlignCenterVertical"></span></button>
+            <button type="button" data-align="right" title="Align right" aria-label="Align right"><span
+                    data-icon="AlignEndVertical"></span></button>
+            <button type="button" data-align="top" title="Align top" aria-label="Align top"><span
+                    data-icon="AlignStartHorizontal"></span></button>
+            <button type="button" data-align="middle" title="Align vertical center"
+                aria-label="Align vertical center"><span data-icon="AlignCenterHorizontal"></span></button>
+            <button type="button" data-align="bottom" title="Align bottom" aria-label="Align bottom"><span
+                    data-icon="AlignEndHorizontal"></span></button>
         </div>
 
         <h2 class="inspector-section-title">Layer order</h2>
@@ -58,6 +88,8 @@
             <button type="button" data-action="delete">Delete</button>
         </div>
     </section>
+    <h2 class="inspector-section-title">Layers</h2>
+    <div class="layer-list" $ref="layers"></div>
 </aside>
 
 <script type="module">

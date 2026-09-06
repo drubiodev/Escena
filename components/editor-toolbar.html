@@ -1,0 +1,40 @@
+<div class="editor-toolbar" role="toolbar" aria-label="Presentation tools">
+    <details class="file-menu">
+        <summary class="command-button">File <span data-icon="ChevronDown"></span></summary>
+        <div class="menu-popover">
+            <button data-command="file:new"><span data-icon="FilePlus2"></span>New presentation</button>
+            <button data-command="file:open"><span data-icon="FolderOpen"></span>Open presentation...</button>
+            <button data-command="file:save"><span data-icon="Download"></span>Download deck (.json)</button>
+            <button data-command="file:html"><span data-icon="Globe"></span>Export playable HTML</button>
+        </div>
+    </details>
+    <span class="toolbar-separator"></span>
+    <button class="icon-button" data-command="undo" aria-label="Undo" title="Undo (Command/Ctrl Z)"><span
+            data-icon="Undo2"></span></button>
+    <button class="icon-button" data-command="redo" aria-label="Redo" title="Redo (Command/Ctrl Shift Z)"><span
+            data-icon="Redo2"></span></button>
+    <span class="toolbar-separator"></span>
+    <details class="layout-menu">
+        <summary class="command-button" aria-label="New slide layouts" title="New slide layouts"><span
+                data-icon="Plus"></span><span class="tool-label">New slide</span><span data-icon="ChevronDown"></span>
+        </summary>
+        <div class="menu-popover">
+            <button data-command="slide:add" data-value="blank">Blank</button>
+            <button data-command="slide:add" data-value="title">Title &amp; subtitle</button>
+            <button data-command="slide:add" data-value="columns">Two columns</button>
+            <button data-command="slide:add" data-value="section">Section heading</button>
+        </div>
+    </details>
+    <button class="icon-button" data-command="duplicate" title="Duplicate selection or slide"
+        aria-label="Duplicate selection or slide"><span data-icon="Copy"></span></button>
+    <button class="icon-button" data-command="delete" title="Delete selection or slide"
+        aria-label="Delete selection or slide"><span data-icon="Trash2"></span></button>
+    <span class="toolbar-spacer"></span>
+    <button class="icon-button" data-command="overview" title="Slide sorter" aria-label="Slide sorter"><span
+            data-icon="LayoutGrid"></span></button>
+    <button class="icon-button mobile-design" data-command="design" title="Toggle design panel"
+        aria-label="Toggle design panel"><span data-icon="SlidersHorizontal"></span></button>
+</div>
+<script>
+    window.Escena.editor.mountToolbar($host);
+</script>

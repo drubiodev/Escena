@@ -6,7 +6,7 @@ import { registry } from "./registry.js";
  * @param {Object} block The stored block instance.
  * @returns {HTMLElement} The block element or a visible missing-type fallback.
  */
-export function createBlockEl(block)
+export function createBlockEl(block, { preview = false } = {})
 {
     const definition = registry.get(block.type);
     if (!definition)
@@ -19,7 +19,11 @@ export function createBlockEl(block)
     const element = document.createElement(registry.elementName(block.type));
     for (const prop of definition.props)
     {
-        const value = block.props?.[prop.key] ?? prop.value;
+        let value = block.props?.[prop.key] ?? prop.value;
+        // A thumbnail is a preview, not another running presentation. Keep
+        // media quiet without changing the props saved in the user's deck.
+        if (preview && prop.key === "autoplay") value = "off";
+        if (preview && prop.key === "muted") value = "on";
         if (prop.key === definition.editable && value === "")
         {
             element.toggleAttribute("data-empty", true);
@@ -54,14 +58,14 @@ export function styleFrame(frame, block)
  * @param {Object} block The stored block instance.
  * @returns {HTMLDivElement} The complete frame element.
  */
-export function createFrame(block)
+export function createFrame(block, options)
 {
     const frame = document.createElement("div");
     frame.className = "frame";
     // The editor uses this stable id to reconnect DOM and document data.
     frame.dataset.id = block.id;
     styleFrame(frame, block);
-    frame.appendChild(createBlockEl(block));
+    frame.appendChild(createBlockEl(block, options));
     return frame;
 }
 
@@ -72,12 +76,12 @@ export function createFrame(block)
  * @param {string} theme The active deck theme key.
  * @returns {void}
  */
-export function renderSlide(slidePage, slideData, theme)
+export function renderSlide(slidePage, slideData, theme, options)
 {
     slidePage.dataset.theme = theme;
     slidePage.style.background = slideData.background || "";
     slidePage.replaceChildren();
     // Append low z values first so higher layers paint later and appear above.
     for (const block of [...slideData.blocks].sort((a, b) => a.z - b.z))
-        slidePage.appendChild(createFrame(block));
+        slidePage.appendChild(createFrame(block, options));
 }

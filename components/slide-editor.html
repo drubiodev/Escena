@@ -41,7 +41,8 @@
         transform-origin: 0 0;
     }
 
-    .slide-page {
+    /* This component uses light DOM, so keep editor positioning out of players. */
+    slide-editor .slide-page {
         position: absolute;
         inset: 0;
         overflow: hidden;
