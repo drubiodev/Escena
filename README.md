@@ -20,8 +20,8 @@ are pinned CDN imports, so the editor needs an internet connection on first load
 
 - Slides: add blank, title, section, or two-column layouts; duplicate, delete,
 	reorder by dragging, and jump through the slide sorter.
-- Insert: the original heading, paragraph, image, QR, and video blocks. No new
-	block types are included in this update.
+- Insert: heading, paragraph, image, QR, video, live Ladrillos components, and
+	code snippets.
 - Canvas: drag, resize, rotate, snap to slide or sibling edges, align, restack,
 	duplicate, delete, and zoom. Double-click text to edit it in place.
 - Design: slide names and backgrounds, four deck-wide themes, block properties,
@@ -161,6 +161,8 @@ and sends navigation commands, never saves or edits the deck.
 export copies Ladrillos' adopted stylesheets into declarative shadow roots so
 the result keeps its appearance without needing the editor runtime.
 
-The original [blocks/index.js](blocks/index.js) catalog and all block files remain
-unchanged. Add future blocks there using the existing folder-and-definition
-pattern; the registry, palette, inspector, and renderer pick them up together.
+## Creating Blocks
+
+See the [block development guide](blocks/README.md) for a complete quote-block
+example, catalog registration, inspector property types, inline editing,
+styling, persistence, runtime limits, and a testing checklist.
