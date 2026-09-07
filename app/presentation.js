@@ -46,6 +46,7 @@ function draw()
 {
     if (!refs || store.mode() !== "present") return;
     renderSlide(refs.surface, store.slide(), store.theme());
+    refs.stageWrap.style.backgroundColor = getComputedStyle(refs.surface).backgroundColor;
     refs.counter.textContent = `${store.currentIndex() + 1} / ${store.slideCount()}`;
     host.querySelector('[data-present="prev"]').disabled = store.currentIndex() === 0;
     host.querySelector('[data-present="next"]').disabled = store.currentIndex() === store.slideCount() - 1;
