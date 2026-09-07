@@ -56,6 +56,18 @@ This is a PowerPoint-style editor, not a `.pptx` importer or exporter. Files fro
 the reference app work only when they use registered Escena block types; unsupported
 types produce a clear error rather than disappearing silently.
 
+## Code Snippets
+
+Choose **Insert > Code snippet** to display code without executing it. Select a
+language in Properties; both the Monaco editor and slide highlighting follow
+that selection. The block includes a filename header, optional line numbers,
+dark/light themes, adjustable font size, and a shadow toggle. Long snippets
+scroll rather than shrinking the text or changing its whitespace.
+
+Highlight.js loads from a pinned CDN on first use. If it cannot load, the snippet
+remains readable as plain text. Use the Ladrillos component block instead when
+you want to run a component, not display its source.
+
 ## Ladrillos Components
 
 The Ladrillos block runs component HTML, styles, and scripts with LadrillosJS
@@ -64,6 +76,10 @@ expressions, event handlers, `$bind`, and directives use the real framework.
 Select a Ladrillos block and click **Interact** at the top-right of the canvas
 to use its inputs, buttons, and other controls. Click **Done** to return to
 moving and resizing it. Selecting another block also ends interaction mode.
+The inspector offers outer-frame border and shadow toggles, corner radius,
+background color, and content inset. The default 10% inset reserves room
+for rotation and animation; set it to 0 for edge-to-edge content. These options
+do not override backgrounds, borders, or shadows authored inside your component.
 Module scripts can import from `ladrillosjs` or an absolute, CORS-enabled URL.
 Relative imports need a hosted URL; this editor does not provide a multi-file
 component filesystem.

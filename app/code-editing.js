@@ -10,7 +10,7 @@ export function installTagClosing(monaco, editor)
         if (text !== ">" && text !== "/") return;
         const model = editor.getModel();
         const selections = editor.getSelections();
-        if (!model || selections.length !== 1 || !selections[0].isEmpty()) return;
+        if (!model || model.getLanguageId() !== "html" || selections.length !== 1 || !selections[0].isEmpty()) return;
         const position = editor.getPosition();
         const document = TextDocument.create(model.uri.toString(), "html", model.getVersionId(), model.getValue());
         const snippet = html.doTagComplete(document, {

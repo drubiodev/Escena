@@ -5,10 +5,10 @@ export function installShortcuts()
 {
     window.addEventListener("keydown", (event) =>
     {
-        if (store.mode() !== "edit" || document.querySelector("dialog[open]")) return;
+        if (event.defaultPrevented || store.mode() !== "edit" || document.querySelector("dialog[open]")) return;
         // Look through shadow roots too: a heading being edited should receive
         // ordinary typing and native text shortcuts, not slide-level commands.
-        const editing = event.composedPath().some((target) => target.matches?.("input, textarea, select") || target.isContentEditable);
+        const editing = event.composedPath().some((target) => target.matches?.("input, textarea, select, .monaco-editor") || target.isContentEditable);
         if (editing) return;
         const modifier = event.metaKey || event.ctrlKey;
         const key = event.key.toLowerCase();

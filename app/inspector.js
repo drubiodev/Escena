@@ -55,12 +55,13 @@ function loadMonaco()
 }
 
 /** Creates a value-compatible control that upgrades to Monaco asynchronously. */
-function codeControl()
+function codeControl(field)
 {
     const host = document.createElement("div");
     host.className = "inspector-code-editor";
     host.setAttribute("role", "group");
     let value = "";
+    let language = "html";
     let editor = null;
     let changeSubscription = null;
     let tagSubscription = null;
@@ -74,12 +75,19 @@ function codeControl()
         },
     });
 
+    host.updateLanguage = (props) =>
+    {
+        language = field.languageKey ? String(props[field.languageKey] || "plaintext") : "html";
+        if (editor && editor.getModel().getLanguageId() !== language)
+            window.monaco.editor.setModelLanguage(editor.getModel(), language);
+    };
+
     Promise.all([loadMonaco(), import("./code-editing.js")]).then(([monaco, { installTagClosing }]) =>
     {
         if (!host.isConnected) return;
         editor = monaco.editor.create(host, {
             value,
-            language: "html",
+            language,
             theme: "vs-dark",
             automaticLayout: true,
             autoIndent: "full",
@@ -127,7 +135,7 @@ function codeControl()
  */
 function controlFor(field)
 {
-    if (field.type === "code") return codeControl();
+    if (field.type === "code") return codeControl(field);
 
     if (field.type === "textarea" || field.type === "lines")
     {
@@ -301,6 +309,7 @@ export function mount($host, $refs)
 
         for (const control of fields.querySelectorAll("[data-key]"))
         {
+            control.updateLanguage?.(block.props);
             if (control === document.activeElement || control.contains(document.activeElement)) continue;
             if (control.type === "checkbox") control.checked = block.props[control.dataset.key] === "on";
             else control.value = block.props[control.dataset.key] ?? "";

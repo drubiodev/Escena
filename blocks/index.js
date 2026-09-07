@@ -4,9 +4,10 @@ import image from "./image/definition.js";
 import qr from "./qr/definition.js";
 import video from "./video/definition.js";
 import ladrillos from "./ladrillos/definition.js";
+import code from "./code/definition.js";
 
 /**
  * Built-in blocks in palette and registration order.
  * @type {import("./types.js").BlockDefinition[]}
  */
-export const BUILT_IN_BLOCKS = [heading, text, image, qr, video, ladrillos];
+export const BUILT_IN_BLOCKS = [heading, text, image, qr, video, ladrillos, code];

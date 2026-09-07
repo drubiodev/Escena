@@ -194,6 +194,45 @@ test("Ladrillos blocks need no tag and preserve code from older decks", async ()
     assert.equal(Object.hasOwn(restored.props, "tag"), false);
 });
 
+test("Ladrillos appearance options persist and older blocks receive defaults", async () =>
+{
+    const { store, validateDeck } = await setup();
+    const block = store.addBlock("ladrillos", 100, 100);
+    const appearance = { border: "off", shadow: "off", radius: "0", inset: "15" };
+    for (const [key, value] of Object.entries(appearance)) store.setBlockProp(block.id, key, value);
+    const saved = structuredClone(store.deck());
+    const restored = validateDeck(saved).slides[0].blocks.find((item) => item.id === block.id);
+    for (const [key, value] of Object.entries(appearance)) assert.equal(restored.props[key], value);
+
+    const legacy = saved.slides[0].blocks.find((item) => item.id === block.id);
+    legacy.props.transparent = "on";
+    legacy.props.background = "#187b78";
+    for (const key of Object.keys(appearance)) delete legacy.props[key];
+    const upgraded = validateDeck(saved).slides[0].blocks.find((item) => item.id === block.id);
+    assert.equal(upgraded.props.border, "on");
+    assert.equal(upgraded.props.shadow, "on");
+    assert.equal(Object.hasOwn(upgraded.props, "transparent"), false);
+    assert.equal(upgraded.props.background, "#187b78");
+    assert.equal(upgraded.props.radius, "6");
+    assert.equal(upgraded.props.inset, "10");
+});
+
+test("code snippets preserve source and display options through save and import", async () =>
+{
+    const { store, validateDeck } = await setup();
+    const block = store.addBlock("code", 100, 100);
+    assert.equal(block.props.language, "javascript");
+    const source = '<script>const value = "<&>";</script>\n<div>{notExecuted}</div>';
+    const props = { code: source, language: "html", filename: "example.html", theme: "light", size: "30", lineNumbers: "off", header: "off", shadow: "off" };
+    for (const [key, value] of Object.entries(props)) store.setBlockProp(block.id, key, value);
+    const saved = JSON.stringify(store.deck());
+    const imported = validateDeck(JSON.parse(saved)).slides[0].blocks.find((item) => item.id === block.id);
+    for (const [key, value] of Object.entries(props)) assert.equal(imported.props[key], value);
+    const restored = await setup(saved);
+    assert.equal(restored.store.block(block.id).props.code, source);
+    assert.equal(restored.store.block(block.id).props.language, "html");
+});
+
 test("new and imported decks can be undone", async () =>
 {
     const { store } = await setup();

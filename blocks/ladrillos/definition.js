@@ -52,5 +52,9 @@ export default {
     props: [
         { key: "code", label: "Component source", type: "code", value: starterCode },
         { key: "background", label: "Preview background", type: "color", value: "#f4f0e8" },
+        { key: "border", label: "Border", type: "toggle", value: "on" },
+        { key: "shadow", label: "Shadow", type: "toggle", value: "on" },
+        { key: "radius", label: "Corner radius", type: "range", value: "6", min: 0, max: 40, step: 1 },
+        { key: "inset", label: "Content inset (%)", type: "range", value: "10", min: 0, max: 25, step: 1 },
     ],
 };
