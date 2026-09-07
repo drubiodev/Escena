@@ -7,6 +7,7 @@ import
     styleFrame,
 } from "./renderer.js";
 import { store } from "./store.js";
+import { paintIcons } from "./icons.js";
 
 const GRID_SIZE = 8;
 const SNAP_TOLERANCE = 7;
@@ -24,8 +25,20 @@ export function mount($host, $refs)
         guideV,
         guideH,
         readout,
+        interactButton,
+        interactLabel,
     } = $refs;
     let zoom = 1;
+    let interactingId = null;
+
+    paintIcons(interactButton);
+    interactButton.addEventListener("click", () =>
+    {
+        const block = store.selected();
+        if (block?.type !== "ladrillos") return;
+        interactingId = interactingId === block.id ? null : block.id;
+        reconcile();
+    });
 
     /** Scales and centers the fixed slide inside the component host. */
     function fitSlide()
@@ -82,6 +95,7 @@ export function mount($host, $refs)
     {
         const slide = store.slide();
         const visibleIds = new Set();
+        if (store.selectedId() !== interactingId || store.mode() !== "edit") interactingId = null;
 
         slidePage.dataset.theme = store.theme();
         slidePage.style.background = slide.background || "";
@@ -100,6 +114,7 @@ export function mount($host, $refs)
             }
 
             styleFrame(frame, block);
+            frame.classList.toggle("is-interacting", block.id === interactingId);
             const props = JSON.stringify(block.props || {});
             if (frame.dataset.props !== props)
             {
@@ -172,6 +187,13 @@ export function mount($host, $refs)
     /** Positions the unscaled selection outline over the selected block. */
     function paintSelection(block = store.selected())
     {
+        const interacting = Boolean(block && block.id === interactingId);
+        interactButton.hidden = block?.type !== "ladrillos";
+        interactButton.setAttribute("aria-pressed", String(interacting));
+        interactButton.setAttribute("aria-label", interacting ? "Stop interacting with component" : "Interact with component");
+        interactButton.title = interacting ? "Stop interacting with component" : "Interact with component";
+        interactLabel.textContent = interacting ? "Done" : "Interact";
+        selection.classList.toggle("is-interacting", interacting);
         if (!block)
         {
             selection.classList.remove("is-visible");
@@ -200,6 +222,7 @@ export function mount($host, $refs)
         }
 
         store.select(frame.dataset.id);
+        if (frame.dataset.id === interactingId) return;
         const interactive = event.composedPath().some((target) =>
             target.matches?.("video, audio, button, input, select, textarea, a")
             || target.isContentEditable

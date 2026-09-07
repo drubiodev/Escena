@@ -180,6 +180,20 @@ test("saved decks reload, corrupt storage falls back, failed saves are visible",
     assert.match(store.saveState(), /unavailable/);
 });
 
+test("Ladrillos blocks need no tag and preserve code from older decks", async () =>
+{
+    const { store, validateDeck } = await setup();
+    const block = store.addBlock("ladrillos", 100, 100);
+    assert.equal(Object.hasOwn(block.props, "tag"), false);
+    const code = '<p>Hello {name} hello</p><script>let name = "daniel";</script>';
+    store.setBlockProp(block.id, "code", code);
+    const legacy = structuredClone(store.deck());
+    legacy.slides[0].blocks.find((item) => item.id === block.id).props.tag = "test-component";
+    const restored = validateDeck(legacy).slides[0].blocks.find((item) => item.id === block.id);
+    assert.equal(restored.props.code, code);
+    assert.equal(Object.hasOwn(restored.props, "tag"), false);
+});
+
 test("new and imported decks can be undone", async () =>
 {
     const { store } = await setup();

@@ -56,6 +56,25 @@ This is a PowerPoint-style editor, not a `.pptx` importer or exporter. Files fro
 the reference app work only when they use registered Escena block types; unsupported
 types produce a clear error rather than disappearing silently.
 
+## Ladrillos Components
+
+The Ladrillos block runs component HTML, styles, and scripts with LadrillosJS
+2.1.3. Component names are generated internally. Plain `<script>` variables,
+expressions, event handlers, `$bind`, and directives use the real framework.
+Select a Ladrillos block and click **Interact** at the top-right of the canvas
+to use its inputs, buttons, and other controls. Click **Done** to return to
+moving and resizing it. Selecting another block also ends interaction mode.
+Module scripts can import from `ladrillosjs` or an absolute, CORS-enabled URL.
+Relative imports need a hosted URL; this editor does not provide a multi-file
+component filesystem.
+
+Each preview runs in an isolated iframe. `localStorage` and `sessionStorage`
+provide in-memory storage for that preview only, reset when its source is rebuilt.
+Components cannot access the editor's document, saved decks, or origin storage.
+Other origin-restricted browser APIs remain subject to the iframe sandbox.
+Framework and script errors appear inside the preview. CDN loading requires a
+network connection.
+
 ## Presenting
 
 Present starts at the selected slide. The player includes previous/next, an

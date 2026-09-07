@@ -70,7 +70,12 @@
                         notes</label><textarea id="speaker-notes" placeholder="Add speaker notes..."></textarea>
                 </section>
             </section>
-            <property-inspector></property-inspector>
+            <div class="inspector-sidebar">
+                <div id="inspector-resize-handle" class="inspector-resize-handle" role="separator"
+                    aria-label="Resize properties" aria-orientation="vertical" aria-controls="properties-pane"
+                    tabindex="0" title="Resize properties"></div>
+                <property-inspector id="properties-pane"></property-inspector>
+            </div>
         </main>
     </div>
     <div id="app-overlays"><presentation-view hidden></presentation-view></div>

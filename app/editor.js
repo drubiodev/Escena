@@ -20,7 +20,7 @@ export function thumbnail(slide, theme)
     const surface = document.createElement("div");
     surface.className = "slide-page thumbnail-surface";
     surface.inert = true;
-    renderSlide(surface, slide, theme, { preview: true });
+    renderSlide(surface, slide, theme, { preview: true, thumbnail: true });
     thumb.append(surface);
     return thumb;
 }
@@ -85,7 +85,7 @@ export function mountNavigator(host, refs)
             const signature = JSON.stringify([slide.blocks, slide.background, store.theme()]);
             if (signature !== card.signature)
             {
-                renderSlide(card.button.querySelector(".thumbnail-surface"), slide, store.theme(), { preview: true });
+                renderSlide(card.button.querySelector(".thumbnail-surface"), slide, store.theme(), { preview: true, thumbnail: true });
                 card.signature = signature;
             }
             if (refs.list.children[index] !== card.button) refs.list.insertBefore(card.button, refs.list.children[index] || null);
@@ -111,11 +111,73 @@ export function mountToolbar(host)
     refresh();
 }
 
+function installInspectorResize()
+{
+    const layout = document.querySelector(".editor-layout");
+    const sidebar = document.querySelector(".inspector-sidebar");
+    const handle = document.getElementById("inspector-resize-handle");
+    const maxWidth = () => Math.max(240, Math.min(720, layout.clientWidth / 2));
+    const sync = () =>
+    {
+        handle.setAttribute("aria-valuemin", "240");
+        handle.setAttribute("aria-valuemax", String(Math.floor(maxWidth())));
+        handle.setAttribute("aria-valuenow", String(Math.round(sidebar.getBoundingClientRect().width)));
+    };
+    const setWidth = (width) =>
+    {
+        layout.style.setProperty("--inspector-width", `${Math.round(Math.min(maxWidth(), Math.max(240, width)))}px`);
+        sync();
+    };
+    handle.addEventListener("pointerdown", (event) =>
+    {
+        if (event.button !== 0 || !event.isPrimary) return;
+        event.preventDefault();
+        handle.focus();
+        const startX = event.clientX;
+        const startWidth = sidebar.getBoundingClientRect().width;
+        handle.setPointerCapture(event.pointerId);
+        document.body.classList.add("resizing-inspector");
+        const move = (moveEvent) => setWidth(startWidth + startX - moveEvent.clientX);
+        const finish = () =>
+        {
+            document.body.classList.remove("resizing-inspector");
+            handle.removeEventListener("pointermove", move);
+            handle.removeEventListener("pointerup", finish);
+            handle.removeEventListener("pointercancel", finish);
+            handle.removeEventListener("lostpointercapture", finish);
+            if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+        };
+        handle.addEventListener("pointermove", move);
+        handle.addEventListener("pointerup", finish);
+        handle.addEventListener("pointercancel", finish);
+        handle.addEventListener("lostpointercapture", finish);
+    });
+    handle.addEventListener("keydown", (event) =>
+    {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const amount = event.shiftKey ? 40 : 10;
+        const width = sidebar.getBoundingClientRect().width;
+        if (event.key === "Home") setWidth(240);
+        else if (event.key === "End") setWidth(maxWidth());
+        else setWidth(width + (event.key === "ArrowLeft" ? amount : -amount));
+    });
+    handle.addEventListener("dblclick", () =>
+    {
+        layout.style.removeProperty("--inspector-width");
+        sync();
+    });
+    new ResizeObserver(sync).observe(sidebar);
+    sync();
+}
+
 export function installEditor()
 {
     // These are the shell controls that sit outside a component. Everything
     // still reads the same store and sends the same commands as component UI.
     paintIcons();
+    installInspectorResize();
     const title = document.getElementById("document-title");
     const notes = document.getElementById("speaker-notes");
     const workspace = document.querySelector(".workspace");

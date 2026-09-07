@@ -3,13 +3,132 @@ import { registry } from "./registry.js";
 import { store } from "./store.js";
 import { paintIcons } from "./icons.js";
 
+const MONACO_CDN = "https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1";
+let monacoPromise;
+
+/** Loads Monaco only when a code field is first selected. */
+function loadMonaco()
+{
+    if (window.monaco) return Promise.resolve(window.monaco);
+    if (monacoPromise) return monacoPromise;
+
+    self.MonacoEnvironment = {
+        getWorker(_workerId, label)
+        {
+            const root = `${MONACO_CDN}/esm/vs`;
+            let path = "editor/editor.worker.js";
+            if (label === "json") path = "language/json/json.worker.js";
+            else if (["css", "scss", "less"].includes(label)) path = "language/css/css.worker.js";
+            else if (["html", "handlebars", "razor"].includes(label)) path = "language/html/html.worker.js";
+            else if (["typescript", "javascript"].includes(label)) path = "language/typescript/ts.worker.js";
+            const source = ("im" + "port") + " " + JSON.stringify(`${root}/${path}`) + ";";
+            const url = URL.createObjectURL(new Blob([source], { type: "application/javascript" }));
+            return new Worker(url, { type: "module" });
+        },
+    };
+
+    const styles = new Promise((resolve) =>
+    {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.dataset.name = "vs/editor/editor.main";
+        link.href = `${MONACO_CDN}/min/vs/editor/editor.main.css`;
+        link.addEventListener("load", resolve, { once: true });
+        link.addEventListener("error", resolve, { once: true });
+        document.head.appendChild(link);
+    });
+    const api = new Promise((resolve, reject) =>
+    {
+        const loader = document.createElement("script");
+        loader.src = `${MONACO_CDN}/min/vs/loader.js`;
+        loader.addEventListener("load", () =>
+        {
+            window.require.config({ paths: { vs: `${MONACO_CDN}/min/vs` } });
+            window.require(["vs/editor/editor.main"], () => resolve(window.monaco), reject);
+        }, { once: true });
+        loader.addEventListener("error", reject, { once: true });
+        document.head.appendChild(loader);
+    });
+
+    monacoPromise = Promise.all([api, styles]).then(([monaco]) => monaco);
+    return monacoPromise;
+}
+
+/** Creates a value-compatible control that upgrades to Monaco asynchronously. */
+function codeControl()
+{
+    const host = document.createElement("div");
+    host.className = "inspector-code-editor";
+    host.setAttribute("role", "group");
+    let value = "";
+    let editor = null;
+    let changeSubscription = null;
+    let tagSubscription = null;
+
+    Object.defineProperty(host, "value", {
+        get: () => editor?.getValue() ?? value,
+        set: (next) =>
+        {
+            value = String(next ?? "");
+            if (editor && editor.getValue() !== value) editor.setValue(value);
+        },
+    });
+
+    Promise.all([loadMonaco(), import("./code-editing.js")]).then(([monaco, { installTagClosing }]) =>
+    {
+        if (!host.isConnected) return;
+        editor = monaco.editor.create(host, {
+            value,
+            language: "html",
+            theme: "vs-dark",
+            automaticLayout: true,
+            autoIndent: "full",
+            tabSize: 4,
+            insertSpaces: true,
+            fontSize: 12,
+            lineHeight: 19,
+            minimap: { enabled: false },
+            folding: false,
+            glyphMargin: false,
+            lineNumbersMinChars: 3,
+            overviewRulerLanes: 0,
+            padding: { top: 8, bottom: 8 },
+            scrollBeyondLastLine: false,
+            stickyScroll: { enabled: false },
+            wordWrap: "on",
+        });
+        editor.getContribution("editor.contrib.formatOnPaste");
+        editor.updateOptions({ formatOnPaste: true });
+        tagSubscription = installTagClosing(monaco, editor);
+        changeSubscription = editor.onDidChangeModelContent(() =>
+        {
+            value = editor.getValue();
+            host.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+    }).catch(() =>
+    {
+        host.textContent = "Code editor could not load. Check your connection and reselect the block.";
+        host.classList.add("is-error");
+    });
+
+    host.dispose = () =>
+    {
+        tagSubscription?.dispose();
+        changeSubscription?.dispose();
+        editor?.dispose();
+    };
+    return host;
+}
+
 /**
  * Creates the native form control requested by a prop definition.
  * @param {Object} field Normalized property definition.
- * @returns {HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement}
+ * @returns {HTMLElement}
  */
 function controlFor(field)
 {
+    if (field.type === "code") return codeControl();
+
     if (field.type === "textarea" || field.type === "lines")
     {
         const textarea = document.createElement("textarea");
@@ -72,25 +191,39 @@ function readImage(file)
 /** Rebuilds the property form for one block definition. */
 function buildFields(definition, fields)
 {
+    for (const control of fields.querySelectorAll("[data-key]")) control.dispose?.();
     fields.replaceChildren();
 
     for (const field of definition.props)
     {
-        const row = document.createElement("label");
+        const row = document.createElement(field.type === "code" ? "div" : "label");
         row.className = "inspector-row";
         row.classList.toggle("is-toggle", field.type === "toggle");
         row.append(document.createTextNode(field.label));
 
         const control = controlFor(field);
         control.dataset.key = field.key;
+        control.setAttribute("aria-label", field.label);
         const eventName = control.tagName === "SELECT" || control.type === "color"
             ? "change"
             : "input";
         control.addEventListener(eventName, () =>
         {
             const selected = store.selected();
-            if (selected)
-                store.setBlockProp(selected.id, field.key, control.type === "checkbox" ? (control.checked ? "on" : "off") : control.value);
+            if (!selected) return;
+            const value = control.type === "checkbox" ? (control.checked ? "on" : "off") : control.value;
+            if (field.type !== "code")
+            {
+                store.setBlockProp(selected.id, field.key, value);
+                return;
+            }
+
+            clearTimeout(control.commitTimer);
+            const blockId = selected.id;
+            control.commitTimer = setTimeout(() =>
+            {
+                if (store.block(blockId)) store.setBlockProp(blockId, field.key, value);
+            }, 300);
         });
         row.appendChild(control);
 
@@ -168,7 +301,7 @@ export function mount($host, $refs)
 
         for (const control of fields.querySelectorAll("[data-key]"))
         {
-            if (control === document.activeElement) continue;
+            if (control === document.activeElement || control.contains(document.activeElement)) continue;
             if (control.type === "checkbox") control.checked = block.props[control.dataset.key] === "on";
             else control.value = block.props[control.dataset.key] ?? "";
         }

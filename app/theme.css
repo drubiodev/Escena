@@ -161,7 +161,7 @@ button {
 
 .editor-layout {
     display: grid;
-    grid-template-columns: 232px minmax(0, 1fr) 288px;
+    grid-template-columns: 232px minmax(0, 1fr) clamp(240px, var(--inspector-width, 288px), min(720px, 50vw));
     width: 100%;
     height: 100%;
     min-width: 0;
@@ -286,6 +286,44 @@ slide-editor {
     border-left: 1px solid var(--ui-border);
 }
 
+.inspector-sidebar {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+}
+
+.inspector-sidebar property-inspector {
+    height: 100%;
+}
+
+.inspector-resize-handle {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    bottom: 0;
+    left: -4px;
+    width: 8px;
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.inspector-resize-handle:hover,
+.inspector-resize-handle:focus-visible,
+.resizing-inspector .inspector-resize-handle {
+    background: var(--ui-accent);
+    outline: none;
+}
+
+.resizing-inspector,
+.resizing-inspector * {
+    cursor: ew-resize !important;
+    user-select: none !important;
+}
+
+.resizing-inspector iframe {
+    pointer-events: none;
+}
+
 .panel-header {
     margin-bottom: 24px;
     padding: 0 2px;
@@ -400,6 +438,45 @@ slide-editor {
     line-height: 1.5;
 }
 
+.inspector-code-editor {
+    width: 100%;
+    height: 320px;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: #1e1e1e;
+}
+
+.inspector-code-editor:focus-within {
+    border-color: var(--ui-accent);
+    box-shadow: 0 0 0 3px var(--ui-focus);
+}
+
+.inspector-code-editor.is-error {
+    height: auto;
+    padding: 12px;
+    color: #ffb4b7;
+    font: 11px/1.5 ui-monospace, monospace;
+}
+
+.runtime-thumbnail {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-content: center;
+    justify-items: center;
+    gap: 16px;
+    border: 2px dashed color-mix(in srgb, var(--s-accent) 45%, transparent);
+    color: var(--s-muted);
+    background: color-mix(in srgb, var(--s-accent) 7%, var(--s-bg));
+    font: 600 20px/1.2 var(--s-font);
+}
+
+.runtime-thumbnail strong {
+    color: var(--s-accent);
+    font: 700 58px/1 ui-monospace, monospace;
+}
+
 .inspector-row input[type="range"] {
     height: 28px;
     border: 0;
@@ -466,18 +543,6 @@ slide-editor {
     border-radius: 4px;
     color: var(--ui-muted);
     background: #191816;
-    font-family: Georgia, serif;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.palette-icon:empty::before {
-    content: "T";
-}
-
-.palette-block[data-type="heading"] .palette-icon:empty::before {
-    content: "H";
-    font-size: 13px;
 }
 
 .palette-label {
@@ -1633,7 +1698,7 @@ dialog::backdrop {
 
 @media (max-width: 1200px) {
     .editor-layout {
-        grid-template-columns: 200px minmax(0, 1fr) 250px;
+        grid-template-columns: 200px minmax(0, 1fr) clamp(240px, var(--inspector-width, 250px), min(720px, 50vw));
         overflow: hidden;
     }
 
@@ -1660,7 +1725,7 @@ dialog::backdrop {
         min-width: 0;
     }
 
-    property-inspector {
+    .inspector-sidebar {
         display: none;
         position: fixed;
         z-index: 15;
@@ -1671,8 +1736,12 @@ dialog::backdrop {
         box-shadow: -12px 0 35px #0007;
     }
 
-    .design-open property-inspector {
+    .design-open .inspector-sidebar {
         display: block;
+    }
+
+    .inspector-resize-handle {
+        display: none;
     }
 
     .mobile-design {

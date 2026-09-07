@@ -6,7 +6,7 @@ import { registry } from "./registry.js";
  * @param {Object} block The stored block instance.
  * @returns {HTMLElement} The block element or a visible missing-type fallback.
  */
-export function createBlockEl(block, { preview = false } = {})
+export function createBlockEl(block, { preview = false, thumbnail = false } = {})
 {
     const definition = registry.get(block.type);
     if (!definition)
@@ -14,6 +14,14 @@ export function createBlockEl(block, { preview = false } = {})
         const missing = document.createElement("div");
         missing.textContent = `Missing block: ${block.type}`;
         return missing;
+    }
+
+    if (thumbnail && definition.renderThumbnail === false)
+    {
+        const placeholder = document.createElement("div");
+        placeholder.className = "runtime-thumbnail";
+        placeholder.innerHTML = "<strong>&lt;/&gt;</strong><span>Ladrillos component</span>";
+        return placeholder;
     }
 
     const element = document.createElement(registry.elementName(block.type));

@@ -4,6 +4,10 @@
     </div>
 
     <div class="interaction-layer" $ref="interactionLayer">
+        <button type="button" class="command-button component-interaction-button" $ref="interactButton"
+            aria-label="Interact with component" aria-pressed="false" title="Interact with component" hidden>
+            <span data-icon="MousePointer2"></span><span $ref="interactLabel">Interact</span>
+        </button>
         <div class="selection" $ref="selection">
             <span class="handle" data-dir="nw"></span>
             <span class="handle" data-dir="n"></span>
@@ -46,6 +50,26 @@
         position: absolute;
         inset: 0;
         overflow: hidden;
+    }
+
+    slide-editor ladrillos-block {
+        pointer-events: none;
+    }
+
+    slide-editor .frame.is-interacting ladrillos-block {
+        pointer-events: auto;
+    }
+
+    .component-interaction-button {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 2;
+        pointer-events: auto;
+    }
+
+    .selection.is-interacting .handle {
+        display: none;
     }
 
     .interaction-layer {

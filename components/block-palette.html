@@ -18,7 +18,9 @@
             </if>
 
             <button class="palette-block" type="button" data-type="{row.type}" draggable="true">
-                <span class="palette-icon" aria-hidden="true">{row.icon}</span>
+                <span class="palette-icon" aria-hidden="true">
+                    <img src="{row.iconSrc}" width="18" height="18" alt="" draggable="false" />
+                </span>
                 <span class="palette-label">{row.label}</span>
                 <span class="palette-add" aria-hidden="true">+</span>
             </button>
@@ -30,7 +32,18 @@
     </if>
 </aside>
 
-<script>
+<script type="module">
+    import { createElement, icons } from "lucide";
+
+    const blockIcons = {
+        heading: "Heading",
+        text: "Pilcrow",
+        image: "Image",
+        qr: "QrCode",
+        video: "Video",
+        ladrillos: "CodeXml",
+    };
+
     let query = "";
     let rows = [];
 
@@ -47,8 +60,14 @@
         for (const group of window.Escena.registry.byCategory()) {
             const blocks = group.items.filter(matches);
             blocks.forEach((block, index) => {
+                const icon = createElement(icons[block.icon || blockIcons[block.type]] || icons.Square);
+                icon.setAttribute("width", "18");
+                icon.setAttribute("height", "18");
+                icon.setAttribute("stroke", "#a8a298");
+                icon.setAttribute("stroke-width", "1.6");
                 nextRows.push({
                     ...block,
+                    iconSrc: `data:image/svg+xml,${encodeURIComponent(icon.outerHTML)}`,
                     heading: index === 0 ? group.name : "",
                 });
             });

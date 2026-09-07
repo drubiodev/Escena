@@ -14,6 +14,7 @@ const PROP_TYPES = [
     "toggle",
     "lines",
     "image",
+    "code",
 ];
 
 
