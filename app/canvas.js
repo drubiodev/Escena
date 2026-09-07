@@ -232,7 +232,7 @@ export function mount($host, $refs)
     });
 
     let pointerAction = null;
-    const MIN_BLOCK_SIZE = 32;
+    const MIN_BLOCK_SIZE = 5;
 
     /** Starts a move or resize from the selected block's current geometry. */
     function beginPointerAction(event, mode, direction = "")
