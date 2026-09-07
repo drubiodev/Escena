@@ -223,7 +223,9 @@ export function installEditor()
         if (document.activeElement !== notes) notes.value = store.slide().notes;
         document.getElementById("save-state").textContent = store.saveState();
         document.getElementById("slide-counter").textContent = `Slide ${store.currentIndex() + 1} of ${store.slideCount()}`;
-        document.title = `${store.title()} - Escena`;
+        document.title = store.title() === "Untitled presentation"
+            ? "Escena | Online Presentation Maker for Slides and Code Demos"
+            : `${store.title()} - Escena Presentation Maker`;
     }
     document.addEventListener("click", (event) =>
     {

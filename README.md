@@ -166,3 +166,30 @@ the result keeps its appearance without needing the editor runtime.
 See the [block development guide](blocks/README.md) for a complete quote-block
 example, catalog registration, inspector property types, inline editing,
 styling, persistence, runtime limits, and a testing checklist.
+
+## Search And Sharing
+
+The editor entry page includes a descriptive title, search description, Open
+Graph and Twitter sharing text, and Schema.org `WebApplication` JSON-LD. The
+session-only presenter page uses `noindex`; this is not an access control.
+Structured data describes existing features and does not guarantee rich results.
+
+Before a public launch:
+
+- Confirm the production HTTPS URL, then add an absolute canonical URL,
+	`og:url`, and the application's structured-data `url`. Do not use localhost
+	or guess a domain. Redirect alternate public URLs to the canonical version.
+- Publish a product screenshot using a sample deck, not private slide content,
+	and add absolute `og:image` and `twitter:image` URLs with descriptive image
+	alt text. Use `summary_large_image` once the image is available.
+- Add a sitemap of canonical public pages and reference it from `robots.txt`.
+	Exclude the presenter page from the sitemap, but allow crawlers to fetch its
+	`noindex` directive. Verify the site in Google Search Console and Bing
+	Webmaster Tools, then submit the sitemap.
+- Build useful, public comparison pages for people evaluating Google Slides
+	and Microsoft PowerPoint alternatives. Explain Escena's code demos, local
+	drafts and HTML exports honestly, including the lack of cloud collaboration
+	and `.pptx` import/export. Keep the editor as the homepage experience.
+- Validate deployed structured data and social previews, and measure real-user
+	Core Web Vitals. Metadata alone will not establish competitive rankings;
+	useful indexed content and reputable inbound links also matter.
