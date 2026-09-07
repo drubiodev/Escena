@@ -10,5 +10,6 @@ export default {
     props: [
         { key: "text", label: "Text", type: "input", value: "A heading" },
         { key: "size", label: "Size", type: "range", value: "76", min: 24, max: 160 },
+        { key: "color", label: "Text color", type: "color", value: "" },
     ],
 };
