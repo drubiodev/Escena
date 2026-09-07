@@ -1145,6 +1145,26 @@ slide-navigator {
     font-size: 10px;
 }
 
+.workspace-status-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.workspace-status-links svg {
+    width: 16px;
+    height: 16px;
+}
+
+.source-link {
+    text-decoration: none;
+}
+
+.source-link:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 2px;
+}
+
 .workspace-status .icon-button {
     min-height: 26px;
     height: 26px;
