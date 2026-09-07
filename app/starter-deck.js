@@ -8,7 +8,7 @@
  */
 export const STARTER_DECK = {
     id: "starter",
-    title: "Escena rebuild",
+    title: "Untitled presentation",
     theme: "default",
     slides: [
         {
@@ -16,18 +16,7 @@ export const STARTER_DECK = {
             name: "Opening",
             notes: "",
             background: "",
-            blocks: [
-                {
-                    id: "b1", type: "heading",
-                    x: 96, y: 80, w: 960, h: 190, z: 0, rotate: 0,
-                    props: { text: "This is heading", size: "76" },
-                },
-                {
-                    id: "b2", type: "text",
-                    x: 100, y: 300, w: 720, h: 180, z: 1, rotate: 0,
-                    props: { text: "This is is a text block", size: "30" },
-                },
-            ],
+            blocks: [],
         },
     ],
 };

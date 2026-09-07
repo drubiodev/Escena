@@ -43,6 +43,28 @@ async function setup(savedDeck)
     return { store, validateDeck, storage, events, context };
 }
 
+test("first-time users start with one blank slide and no history", async () =>
+{
+    const { store } = await setup();
+    assert.equal(store.title(), "Untitled presentation");
+    assert.equal(store.slideCount(), 1);
+    assert.equal(store.slide().blocks.length, 0);
+    assert.equal(store.slide().notes, "");
+    assert.equal(store.canUndo(), false);
+    assert.equal(store.canRedo(), false);
+});
+
+test("new heading and text blocks start empty", async () =>
+{
+    const { store } = await setup();
+    for (const type of ["heading", "text"])
+    {
+        const block = store.addBlock(type);
+        assert.equal(block.props.text, "");
+        assert.equal(store.selectedId(), block.id);
+    }
+});
+
 test("slide layouts, ordering and deletion are undoable", async () =>
 {
     const { store } = await setup();
@@ -68,25 +90,28 @@ test("slide layouts, ordering and deletion are undoable", async () =>
 test("typing coalesces, navigation does not enter history, new edits discard redo", async () =>
 {
     const { store } = await setup();
-    const block = store.slide().blocks[0];
+    const added = store.addBlock("heading");
+    const saved = await setup(JSON.stringify(store.deck()));
+    const block = saved.store.block(added.id);
+    const editingStore = saved.store;
     const original = block.props.text;
-    store.select(block.id);
-    assert.equal(store.canUndo(), false);
-    store.setBlockProp(block.id, "text", "Hello");
-    store.setBlockProp(block.id, "text", "Hello again");
-    store.undo();
-    assert.equal(store.block(block.id).props.text, original);
-    store.redo();
-    assert.equal(store.block(block.id).props.text, "Hello again");
-    store.undo();
-    store.setTitle("A new title");
-    assert.equal(store.canRedo(), false);
+    editingStore.select(block.id);
+    assert.equal(editingStore.canUndo(), false);
+    editingStore.setBlockProp(block.id, "text", "Hello");
+    editingStore.setBlockProp(block.id, "text", "Hello again");
+    editingStore.undo();
+    assert.equal(editingStore.block(block.id).props.text, original);
+    editingStore.redo();
+    assert.equal(editingStore.block(block.id).props.text, "Hello again");
+    editingStore.undo();
+    editingStore.setTitle("A new title");
+    assert.equal(editingStore.canRedo(), false);
 });
 
 test("copy and paste work across slides without sharing props", async () =>
 {
     const { store } = await setup();
-    const source = store.slide().blocks[0];
+    const source = store.addBlock("heading");
     store.select(source.id);
     store.copyBlock();
     store.addSlide();
@@ -149,6 +174,7 @@ test("image aspect fitting stays with the source edit", async () =>
 test("invalid imports are atomic and duplicate IDs are repaired", async () =>
 {
     const { store, validateDeck } = await setup();
+    store.addBlock("heading");
     const before = JSON.stringify(store.deck());
     for (const raw of [null, {}, { slides: [] }, { slides: [{ blocks: [{ type: "unknown" }] }] }])
         assert.throws(() => store.importDeck(raw));
@@ -168,11 +194,18 @@ test("saved decks reload, corrupt storage falls back, failed saves are visible",
     const { store, storage, context } = await setup();
     store.setTitle("Saved presentation");
     store.setTheme("forest");
+    const heading = store.addBlock("heading");
+    store.setBlockProp(heading.id, "text", "My saved heading");
+    const text = store.addBlock("text");
+    store.setBlockProp(text.id, "text", "My saved paragraph");
     const restored = await setup(storage.get("escena.studio.v1"));
     assert.equal(restored.store.title(), "Saved presentation");
     assert.equal(restored.store.theme(), "forest");
+    assert.equal(restored.store.block(heading.id).props.text, "My saved heading");
+    assert.equal(restored.store.block(text.id).props.text, "My saved paragraph");
     const corrupt = await setup("not json");
     assert.equal(corrupt.store.slideCount(), 1);
+    assert.equal(corrupt.store.slide().blocks.length, 0);
     assert.match(corrupt.store.saveState(), /Could not restore/);
     context.localStorage.setItem = () => { throw new Error("Quota exceeded"); };
     store.setTitle("Still editable");
