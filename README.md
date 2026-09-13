@@ -91,6 +91,23 @@ Other origin-restricted browser APIs remain subject to the iframe sandbox.
 Framework and script errors appear inside the preview. CDN loading requires a
 network connection.
 
+### Slide Runtime Cache
+
+The editor, presentation player, and each presenter preview retain up to five
+recently visited slides per surface. Returning to a cached slide preserves its
+component state without rerunning its scripts. Changing a block's type or props
+rebuilds that block; moving or resizing it, changing notes, and changing the slide
+background or deck theme do not. Older slides are evicted as needed, deleted
+slides are removed, and ending a presentation clears its player and presenter
+caches. Editor and presentation runtimes remain separate.
+
+Hidden slides are inert. Playing videos pause while hidden and resume on return.
+Embedded Ladrillos media and running animations also pause. Custom background
+work, such as timers or network requests, is not automatically suspended:
+components can read `window.escenaActive` initially and listen on `window` for
+`escena:activity`, whose `event.detail.active` indicates whether to resume or
+pause their work. The editor's components become inactive during presentation.
+
 ## Presenting
 
 Present starts at the selected slide. The player includes previous/next, an

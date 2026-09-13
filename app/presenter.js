@@ -1,7 +1,7 @@
 import { registerComponents } from "ladrillosjs";
 import { BUILT_IN_BLOCKS } from "../blocks/index.js";
 import { registry } from "./registry.js";
-import { renderSlide } from "./renderer.js";
+import { createSlideCache } from "./renderer.js";
 import { paintIcons } from "./icons.js";
 
 export async function bootPresenter()
@@ -18,6 +18,8 @@ export async function bootPresenter()
     let lastSeen = Date.now();
     const current = document.getElementById("current-slide");
     const next = document.getElementById("next-slide");
+    const currentCache = createSlideCache(current, { preview: true });
+    const nextCache = createSlideCache(next, { preview: true });
     function fit()
     {
         for (const surface of [current, next]) surface.style.transform = `translate(-50%, -50%) scale(${surface.parentElement.clientWidth / 1280})`;
@@ -36,9 +38,19 @@ export async function bootPresenter()
         if (lastSignature !== signature)
         {
             lastSignature = signature;
-            renderSlide(current, slide, state.deck.theme, { preview: true });
-            if (following) renderSlide(next, following, state.deck.theme, { preview: true });
-            else next.replaceChildren();
+            currentCache.prune(state.deck.slides);
+            nextCache.prune(state.deck.slides);
+            if (state.presenting)
+            {
+                currentCache.show(slide, state.deck.theme);
+                if (following) nextCache.show(following, state.deck.theme);
+                else nextCache.clear();
+            }
+            else
+            {
+                currentCache.clear();
+                nextCache.clear();
+            }
             document.getElementById("next-label").textContent = following?.name || "End of presentation";
             document.getElementById("presenter-notes").textContent = slide.notes || "No notes for this slide.";
             fit();

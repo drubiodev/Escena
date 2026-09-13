@@ -23,6 +23,13 @@
     $host.style.borderRadius = Math.min(40, Math.max(0, Number(radius) || 0)) + "px";
     $host.style.background = previewBackground;
 
+    const sendActivity = () => $refs.frame.contentWindow?.postMessage({
+        type: "escena:activity",
+        active: $host.closest(".frame")?.dataset.active !== "false",
+    }, "*");
+    $host.addEventListener("escena:activity", sendActivity);
+    $refs.frame.addEventListener("load", sendActivity);
+
     $refs.frame.srcdoc = `<!doctype html>
 <html>
 <head>
@@ -64,6 +71,56 @@
         window.addEventListener("unhandledrejection", (event) => showError(event.reason));
         configure({ onError: showError });
 
+        let active = ${$host.closest(".frame")?.dataset.active !== "false"};
+        window.escenaActive = active;
+        const pausedMedia = new Set();
+        const pausedAnimations = new Set();
+        const observedRoots = new WeakSet();
+        const pauseContent = (root) => {
+            if (!observedRoots.has(root)) {
+                observedRoots.add(root);
+                root.addEventListener("play", (event) => {
+                    if (active || !event.target.matches?.("video, audio")) return;
+                    pausedMedia.add(event.target);
+                    event.target.pause();
+                }, true);
+            }
+            for (const animation of root.getAnimations()) {
+                if (animation.playState !== "running") continue;
+                pausedAnimations.add(animation);
+                animation.pause();
+            }
+            for (const element of root.querySelectorAll("*")) {
+                if (element.matches("video, audio") && !element.paused && !element.ended) {
+                    pausedMedia.add(element);
+                    element.pause();
+                }
+                if (element.shadowRoot) pauseContent(element.shadowRoot);
+            }
+        };
+        const syncActivity = () => {
+            if (!active) {
+                pauseContent(document);
+            }
+            else {
+                for (const media of pausedMedia) if (media.isConnected) media.play().catch(() => { });
+                for (const animation of pausedAnimations) {
+                    if (animation.playState === "paused" && animation.effect?.target?.isConnected) animation.play();
+                }
+                pausedMedia.clear();
+                pausedAnimations.clear();
+            }
+        };
+        window.addEventListener("message", (event) => {
+            if (event.source !== parent || event.data?.type !== "escena:activity" || typeof event.data.active !== "boolean") return;
+            const changed = active !== event.data.active;
+            active = event.data.active;
+            window.escenaActive = active;
+            syncActivity();
+            if (changed) window.dispatchEvent(new CustomEvent("escena:activity", { detail: { active } }));
+        });
+        new MutationObserver(() => { if (!active) syncActivity(); }).observe(document.body, { childList: true, subtree: true });
+
         try {
             for (const storageName of ["localStorage", "sessionStorage"]) {
                 const values = new Map();
@@ -82,6 +139,7 @@
             const sourceUrl = URL.createObjectURL(new Blob([source], { type: "text/html" }));
             await registerComponent(${JSON.stringify(componentTag)}, sourceUrl + "#.html", true);
             document.getElementById("mount").append(document.createElement(${JSON.stringify(componentTag)}));
+            syncActivity();
             URL.revokeObjectURL(sourceUrl);
         }
         catch (error) {

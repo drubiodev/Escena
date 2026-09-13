@@ -1,11 +1,12 @@
 import { $listen } from "ladrillosjs";
 import { store } from "./store.js";
-import { renderSlide } from "./renderer.js";
+import { createSlideCache } from "./renderer.js";
 import { paintIcons } from "./icons.js";
 import { thumbnail, notify } from "./editor.js";
 
 let host;
 let refs;
+let slideCache;
 let startedAt = 0;
 let timer;
 let black = false;
@@ -45,7 +46,8 @@ function fit()
 function draw()
 {
     if (!refs || store.mode() !== "present") return;
-    renderSlide(refs.surface, store.slide(), store.theme());
+    slideCache.prune(store.slides());
+    slideCache.show(store.slide(), store.theme());
     refs.counter.textContent = `${store.currentIndex() + 1} / ${store.slideCount()}`;
     host.querySelector('[data-present="prev"]').disabled = store.currentIndex() === 0;
     host.querySelector('[data-present="next"]').disabled = store.currentIndex() === store.slideCount() - 1;
@@ -57,6 +59,7 @@ export const presentation = {
     {
         host = element;
         refs = references;
+        slideCache = createSlideCache(refs.surface);
         paintIcons(host);
         new ResizeObserver(fit).observe(refs.stageWrap);
         host.addEventListener("click", (event) =>
@@ -101,7 +104,7 @@ export const presentation = {
     {
         if (!host) return;
         host.hidden = true;
-        refs.surface.replaceChildren();
+        slideCache.clear();
         clearInterval(timer);
         document.querySelector(".slideshow-app").inert = false;
         store.setMode("edit");

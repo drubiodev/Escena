@@ -2,8 +2,7 @@ import { $listen } from "ladrillosjs";
 import { registry, SLIDE_HEIGHT, SLIDE_WIDTH } from "./registry.js";
 import
 {
-    createBlockEl,
-    createFrame,
+    createSlideCache,
     styleFrame,
 } from "./renderer.js";
 import { store } from "./store.js";
@@ -87,47 +86,21 @@ export function mount($host, $refs)
         fitSlide();
     });
 
-    const frames = new Map();
+    const slideCache = createSlideCache(slidePage, { preview: true });
+    let frames = new Map();
     const fittedImageSources = new Map();
 
     /** Updates existing frames while preserving DOM identity for unchanged blocks. */
     function reconcile()
     {
         const slide = store.slide();
-        const visibleIds = new Set();
         if (store.selectedId() !== interactingId || store.mode() !== "edit") interactingId = null;
-
-        slidePage.dataset.theme = store.theme();
-        slidePage.style.background = slide.background || "";
-
+        slideCache.prune(store.slides());
+        frames = slideCache.show(slide, store.theme(), store.mode() === "edit");
         for (const block of slide.blocks)
         {
-            visibleIds.add(block.id);
-            let frame = frames.get(block.id);
-
-            if (!frame)
-            {
-                frame = createFrame(block, { preview: true });
-                frame.dataset.props = JSON.stringify(block.props || {});
-                frames.set(block.id, frame);
-                slidePage.appendChild(frame);
-            }
-
-            styleFrame(frame, block);
+            const frame = frames.get(block.id);
             frame.classList.toggle("is-interacting", block.id === interactingId);
-            const props = JSON.stringify(block.props || {});
-            if (frame.dataset.props !== props)
-            {
-                frame.dataset.props = props;
-                frame.replaceChildren(createBlockEl(block, { preview: true }));
-            }
-        }
-
-        for (const [id, frame] of frames)
-        {
-            if (visibleIds.has(id)) continue;
-            frame.remove();
-            frames.delete(id);
         }
 
         paintSelection(store.selected());

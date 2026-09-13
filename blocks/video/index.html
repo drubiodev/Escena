@@ -23,6 +23,24 @@
 
     const source = src === true ? "" : String(src);
     const posterUrl = poster === true ? "" : String(poster);
+    function isActive() {
+        return $host.closest(".frame")?.dataset.active !== "false";
+    }
+    $host.addEventListener("escena:activity", () => {
+        if (!isActive()) {
+            if (!$refs.video.paused && !$refs.video.ended) $refs.video.dataset.resumePlayback = "true";
+            $refs.video.pause();
+        }
+        else if ($refs.video.dataset.resumePlayback === "true") {
+            $refs.video.dataset.resumePlayback = "false";
+            $refs.video.play().catch(() => { });
+        }
+    });
+    $refs.video.addEventListener("play", () => {
+        if (isActive()) return;
+        $refs.video.dataset.resumePlayback = "true";
+        $refs.video.pause();
+    });
     function showPlaceholder(message) {
         $refs.video.hidden = true;
         $refs.playButton.hidden = true;
@@ -60,7 +78,8 @@
         $refs.video.addEventListener("error", () => showPlaceholder("Video unavailable"), { once: true });
         if ($refs.video.autoplay) {
             $refs.video.addEventListener("canplay", () => {
-                $refs.video.play().catch(() => { });
+                if (isActive()) $refs.video.play().catch(() => { });
+                else $refs.video.dataset.resumePlayback = "true";
             }, { once: true });
         }
         $refs.video.src = source;

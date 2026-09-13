@@ -93,3 +93,81 @@ export function renderSlide(slidePage, slideData, theme, options)
     for (const block of [...slideData.blocks].sort((a, b) => a.z - b.z))
         slidePage.appendChild(createFrame(block, options));
 }
+
+export function createSlideCache(slidePage, options)
+{
+    const slides = new Map();
+    const setActive = (frame, active) =>
+    {
+        if (frame.dataset.active === String(active)) return;
+        frame.dataset.active = String(active);
+        frame.firstElementChild?.dispatchEvent(new CustomEvent("escena:activity", { detail: { active } }));
+    };
+    const remove = (id) =>
+    {
+        for (const frame of slides.get(id).values())
+        {
+            setActive(frame, false);
+            frame.remove();
+        }
+        slides.delete(id);
+    };
+    return {
+        show(slide, theme, active = true)
+        {
+            let frames = slides.get(slide.id);
+            if (!frames) frames = new Map();
+            slides.delete(slide.id);
+            slides.set(slide.id, frames);
+            slidePage.dataset.theme = theme;
+            slidePage.style.background = slide.background || "";
+            const visibleIds = new Set(slide.blocks.map((block) => block.id));
+            for (const [id, frame] of frames)
+            {
+                if (visibleIds.has(id)) continue;
+                setActive(frame, false);
+                frame.remove();
+                frames.delete(id);
+            }
+            for (const block of [...slide.blocks].sort((first, second) => first.z - second.z))
+            {
+                const signature = JSON.stringify([block.type, block.props || {}]);
+                let frame = frames.get(block.id);
+                if (!frame)
+                {
+                    frame = createFrame(block, options);
+                    frame.dataset.signature = signature;
+                    frames.set(block.id, frame);
+                    frame.dataset.active = String(active);
+                    slidePage.appendChild(frame);
+                }
+                else if (frame.dataset.signature !== signature)
+                {
+                    frame.replaceChildren(createBlockEl(block, options));
+                    frame.dataset.signature = signature;
+                }
+                styleFrame(frame, block);
+            }
+            for (const [id, cachedFrames] of slides)
+            {
+                for (const frame of cachedFrames.values())
+                {
+                    frame.hidden = id !== slide.id;
+                    frame.inert = id !== slide.id;
+                    setActive(frame, id === slide.id && active);
+                }
+            }
+            while (slides.size > 5) remove(slides.keys().next().value);
+            return frames;
+        },
+        prune(currentSlides)
+        {
+            const ids = new Set(currentSlides.map((slide) => slide.id));
+            for (const id of slides.keys()) if (!ids.has(id)) remove(id);
+        },
+        clear()
+        {
+            for (const id of slides.keys()) remove(id);
+        },
+    };
+}
