@@ -13,7 +13,7 @@ class Element
     events = [];
     get firstElementChild() { return this.children[0]; }
     dispatchEvent(event) { this.events.push(event); }
-    setAttribute() {}
+    setAttribute() { }
     appendChild(child)
     {
         child.parent = this;
@@ -35,7 +35,7 @@ async function setup()
 {
     const context = vm.createContext({ CustomEvent, document: { createElement: () => new Element() } });
     const registry = new vm.SourceTextModule(await readFile(new URL("../app/registry.js", import.meta.url), "utf8"), { context });
-    await registry.link(() => {});
+    await registry.link(() => { });
     await registry.evaluate();
     registry.namespace.registry.define({ type: "test", path: "test.html", props: [{ key: "text", value: "" }] });
     const renderer = new vm.SourceTextModule(await readFile(new URL("../app/renderer.js", import.meta.url), "utf8"), { context });
