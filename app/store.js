@@ -307,9 +307,10 @@ export const store = {
   * @param {string} type Registered block type.
   * @param {number} [x] Desired horizontal center in slide coordinates.
   * @param {number} [y] Desired vertical center in slide coordinates.
+    * @param {Object} [props] Initial property overrides.
   * @returns {object|null} The new block, or null for an unknown type.
   */
-    addBlock(type, x, y)
+        addBlock(type, x, y, props = {})
     {
         const definition = registry.get(type);
         if (!definition) return null;
@@ -329,7 +330,7 @@ export const store = {
             h: height,
             z: slide.blocks.reduce((highest, item) => Math.max(highest, item.z), -1) + 1,
             rotate: 0,
-            props: registry.defaults(type),
+            props: { ...registry.defaults(type), ...props },
         };
         pendingFit = {
             id: block.id,

@@ -12,6 +12,7 @@ import { installCommands } from "./commands.js";
 import * as editor from "./editor.js";
 import { installShortcuts } from "./shortcuts.js";
 import { presentation } from "./presentation.js";
+import { installWebMCP } from "./webmcp.js";
 
 const APP_COMPONENTS = [
     { name: "block-palette", path: "./components/block-palette.html" },
@@ -55,4 +56,5 @@ export async function boot()
     installCommands();
     editor.installEditor();
     installShortcuts();
+    await installWebMCP();
 }

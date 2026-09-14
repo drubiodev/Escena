@@ -40,8 +40,70 @@ async function setup(savedDeck)
     modules.get(resolve(root, "app/registry.js")).namespace.registry.defineMany(definitions.namespace.BUILT_IN_BLOCKS);
     const { store, validateDeck } = module.namespace;
     store.load();
-    return { store, validateDeck, storage, events, context };
+    return { store, validateDeck, storage, events, context, load };
 }
+
+test("block tools discover live definitions and insert configured blocks atomically", async () =>
+{
+    const { store, storage, load } = await setup();
+    const module = await load(resolve(root, "app/tools/index.js"));
+    await module.evaluate();
+    const [list, describe, add] = module.namespace.tools;
+    assert.equal((await list.execute({})).length, 8);
+    const { propsSchema } = await describe.execute({ blockType: "code" });
+    assert.ok(propsSchema.properties.language.enum.includes("python"));
+    assert.equal(propsSchema.properties.size.minimum, 12);
+    assert.equal(propsSchema.properties.size.default, 24);
+    propsSchema.properties.language.enum.push("fake");
+    assert.equal((await describe.execute({ blockType: "code" })).propsSchema.properties.language.enum.includes("fake"), false);
+
+    const before = JSON.stringify(store.deck());
+    for (const input of [null, { blockType: "unknown" }, { blockType: "code", props: null },
+        { blockType: "code", props: { missing: true } }, { blockType: "code", props: { language: "fake" } },
+        { blockType: "code", props: { size: 500 } }, { blockType: "code", props: { size: NaN } },
+        { blockType: "code", props: { lineNumbers: false } }])
+        await assert.rejects(add.execute(input));
+    assert.equal(JSON.stringify(store.deck()), before);
+    assert.equal(store.canUndo(), false);
+    const result = await add.execute({ blockType: "code", props: { language: "python", code: "print('Hello')", lineNumbers: "off", size: 30 } });
+    assert.equal(store.selectedId(), result.block.id);
+    assert.equal(store.selected().props.language, "python");
+    assert.equal(store.selected().props.size, "30");
+    assert.equal(store.selected().props.theme, "dark");
+    assert.equal(JSON.parse(storage.get("escena.studio.v1")).slides[0].blocks[0].props.code, "print('Hello')");
+    result.block.props.language = "fake";
+    assert.equal(store.selected().props.language, "python");
+    store.undo();
+    assert.equal(JSON.stringify(store.deck()), before);
+    store.redo();
+    assert.equal(store.selected().props.language, "python");
+    store.setMode("present");
+    await assert.rejects(add.execute({ blockType: "code" }));
+    store.setMode("edit");
+
+    const registryModule = await load(resolve(root, "app/registry.js"));
+    registryModule.namespace.registry.define({ type: "custom", path: "./custom.html", props: [{ key: "text", value: "Default" }] });
+    assert.equal((await list.execute({})).length, 9);
+    assert.equal((await describe.execute({ blockType: "custom" })).propsSchema.properties.text.default, "Default");
+    assert.equal((await add.execute({ blockType: "custom" })).block.props.text, "Default");
+});
+
+test("WebMCP registers all tools and tolerates missing or failing browser support", async () =>
+{
+    const { context, load } = await setup();
+    context.document = {};
+    const module = await load(resolve(root, "app/webmcp.js"));
+    await module.evaluate();
+    await module.namespace.installWebMCP();
+    const names = [];
+    context.console = { warn() {} };
+    context.document.modelContext = { async registerTool(tool) {
+        names.push(tool.name);
+        if (tool.name === "get_block_schema") throw new Error("Registration unavailable");
+    } };
+    await module.namespace.installWebMCP();
+    assert.deepEqual(names, ["list_block_types", "get_block_schema", "add_block"]);
+});
 
 test("first-time users start with one blank slide and no history", async () =>
 {
