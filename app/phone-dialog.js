@@ -4,6 +4,7 @@ import { paintIcons } from "./icons.js";
 import { notify } from "./editor.js";
 
 const BASE_KEY = "escena.phone.base";
+const CAMERA_KEY = "escena.phone.camera";
 const isLoopback = ["localhost", "127.0.0.1", "[::1]", ""].includes(location.hostname);
 
 function phoneUrl(baseText, code)
@@ -33,6 +34,7 @@ export function openPhoneDialog(onLink)
         <canvas class="phone-qr" aria-label="Pairing QR code" hidden></canvas>
         <p class="phone-status" role="status"></p>
         <video class="phone-scan" playsinline muted hidden></video>
+        <select class="phone-camera" aria-label="Camera" hidden></select>
         <label class="phone-field" data-section="reply" hidden>Or paste the phone's code
             <textarea data-field="reply" rows="2" spellcheck="false"></textarea>
         </label>
@@ -46,11 +48,13 @@ export function openPhoneDialog(onLink)
     const canvas = $(".phone-qr");
     const status = $(".phone-status");
     const video = $(".phone-scan");
+    const cameraPicker = $(".phone-camera");
     const replyBox = $('[data-section="reply"]');
     const scanButton = $('[data-action="scan"]');
     const pasteButton = $('[data-action="paste"]');
     let pairing = null;
     let stream = null;
+    let scanRun = 0;
     let closed = false;
 
     const say = (text) => { status.textContent = text; };
@@ -125,28 +129,58 @@ export function openPhoneDialog(onLink)
 
     function stopScan()
     {
+        scanRun++;
         stream?.getTracks().forEach((track) => track.stop());
         stream = null;
         video.hidden = true;
         video.srcObject = null;
+        cameraPicker.hidden = true;
     }
 
-    async function scan()
+    // Laptops with a built-in and an external webcam (or a virtual camera) need a choice;
+    // labels only become available once camera permission has been granted.
+    async function listCameras(activeId)
     {
-        if (stream) return;
+        const cameras = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === "videoinput");
+        cameraPicker.replaceChildren(...cameras.map((camera, index) =>
+            Object.assign(document.createElement("option"), { value: camera.deviceId, textContent: camera.label || `Camera ${index + 1}` })));
+        if (activeId) cameraPicker.value = activeId;
+        cameraPicker.hidden = cameras.length < 2;
+    }
+
+    async function openCamera(deviceId)
+    {
+        const wanted = deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "user" };
+        try { return await navigator.mediaDevices.getUserMedia({ video: wanted }); }
+        catch (error)
+        {
+            // A remembered camera may be unplugged; fall back to the default one.
+            if (deviceId && ["OverconstrainedError", "NotFoundError"].includes(error.name)) return navigator.mediaDevices.getUserMedia({ video: true });
+            throw error;
+        }
+    }
+
+    async function scan(deviceId = localStorage.getItem(CAMERA_KEY) || "")
+    {
+        if (typeof deviceId !== "string") deviceId = localStorage.getItem(CAMERA_KEY) || "";
+        stopScan();
+        const run = scanRun;
         try
         {
             const jsQR = (await import("jsqr")).default;
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            const opened = await openCamera(deviceId);
+            if (run !== scanRun || closed) { opened.getTracks().forEach((track) => track.stop()); return; }
+            stream = opened;
             video.srcObject = stream;
             video.hidden = false;
             await video.play();
+            await listCameras(stream.getVideoTracks()[0].getSettings().deviceId);
             say("Point the phone's code at the webcam...");
             const work = document.createElement("canvas");
             const context = work.getContext("2d", { willReadFrequently: true });
             const tick = async () =>
             {
-                if (!stream) return;
+                if (run !== scanRun) return;
                 if (video.videoWidth)
                 {
                     work.width = video.videoWidth;
@@ -177,7 +211,12 @@ export function openPhoneDialog(onLink)
         localStorage.setItem(BASE_KEY, baseInput.value.trim());
         showQr();
     });
-    scanButton.addEventListener("click", scan);
+    scanButton.addEventListener("click", () => scan());
+    cameraPicker.addEventListener("change", () =>
+    {
+        localStorage.setItem(CAMERA_KEY, cameraPicker.value);
+        scan(cameraPicker.value);
+    });
     pasteButton.addEventListener("click", () => { const text = $('[data-field="reply"]').value; if (text.trim()) accept(text); });
     dialog.addEventListener("close", () =>
     {
