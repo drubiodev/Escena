@@ -54,6 +54,8 @@ function showRemote(link)
     const editor = $("notes-editor");
     const notesView = $("notes");
     const EMPTY_NOTES = "No notes for this slide.";
+    const startButton = $("start");
+    const updateStart = () => { startButton.hidden = !state || state.presenting || editing; };
 
     // Notes editing: edits are sent shortly after typing stops, addressed by slide id.
     // While an edit is unconfirmed, incoming copies of that slide's notes are ignored
@@ -91,6 +93,7 @@ function showRemote(link)
         editor.hidden = false;
         $("controls").hidden = true;
         editButton.textContent = "Done";
+        updateStart();
         editor.focus();
     }
 
@@ -103,6 +106,7 @@ function showRemote(link)
         notesView.hidden = false;
         $("controls").hidden = false;
         editButton.textContent = "Edit notes";
+        updateStart();
     }
 
     editButton.addEventListener("click", () => (editing ? stopEdit() : startEdit()));
@@ -139,7 +143,8 @@ function showRemote(link)
         }
         editButton.disabled = !data.id || data.truncated;
         $("next-up").textContent = data.next ? `Up next: ${data.next}` : "Last slide";
-        say(!data.presenting ? "Start presenting on the computer" : data.black ? "Screen is blacked out" : "Connected");
+        say(!data.presenting ? "Ready to present" : data.black ? "Screen is blacked out" : "Connected");
+        updateStart();
         prev.disabled = !data.presenting || data.index === 0;
         next.disabled = !data.presenting || data.index === data.count - 1;
     };

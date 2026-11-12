@@ -113,7 +113,8 @@ pause their work. The editor's components become inactive during presentation.
 
 ## Presenting
 
-Present starts at the selected slide. The player includes previous/next, an
+Present starts at the selected slide and goes fullscreen (Escape or the fullscreen
+button leaves it). The player includes previous/next, an
 overview, blackout, fullscreen, and an elapsed timer. Open the presenter window
 for the current slide, next slide, and notes on a second screen. Allow popups when
 prompted. Presenter controls use a session-specific BroadcastChannel; separate
@@ -124,6 +125,9 @@ editors cannot accidentally navigate each other's presentations.
 Use the phone button in the toolbar or player to turn your phone into a light
 remote: it shows the current slide's notes, the next slide's title, and the
 timer, with Previous, Next, and Blackout buttons. It never receives the deck.
+While nothing is presenting, a **Start presentation** button begins the show from
+the current slide. Browsers only allow fullscreen from a click or key press on the
+computer, so a phone-started show is not fullscreen; press F on the computer.
 Tap **Edit notes** to change the current slide's notes from the phone; edits are
 saved to that slide on the computer a moment after you stop typing (and appear in
 its notes box and undo history). The Previous/Next buttons are hidden while editing.

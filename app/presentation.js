@@ -68,6 +68,12 @@ function addRemote(link)
     {
         if (data?.type === "hello") publishRemotes();
         if (data?.type === "command" && store.mode() === "present" && REMOTE_COMMANDS.includes(data.name)) presentation[data.name]();
+        if (data?.type === "command" && data.name === "start" && store.mode() !== "present")
+        {
+            document.querySelector("dialog.phone-dialog[open]")?.close();
+            presentation.open(false, { fullscreen: false });
+            notify("Presenting from your phone. Press F for fullscreen.");
+        }
         // Notes edits are addressed by slide id, so one that arrives after the
         // slide changed still lands on the slide the phone was editing.
         if (data?.type === "notes" && typeof data.id === "string" && typeof data.text === "string" && data.text.length <= MAX_REMOTE_NOTES
@@ -152,7 +158,7 @@ export const presentation = {
         slideCache.warm(slides[index], store.theme());
         cancelWarm = warmAround(slideCache, slides, index, store.theme(), { ahead: 2, behind: 0 });
     },
-    open(fromStart = false)
+    open(fromStart = false, { fullscreen = true } = {})
     {
         if (!host) return;
         cancelWarm();
@@ -170,6 +176,9 @@ export const presentation = {
         refs.timer.textContent = "00:00";
         draw();
         publish();
+        // Browsers only allow fullscreen from a user gesture, so a start that
+        // arrives from the phone passes fullscreen: false.
+        if (fullscreen && !document.fullscreenElement) host.requestFullscreen?.().catch(() => notify("Fullscreen is unavailable in this browser."));
     },
     close()
     {
