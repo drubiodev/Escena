@@ -9,12 +9,15 @@ step for the app.
 Run the VS Code task **serve Escena**, or from this folder:
 
 ```sh
-npx serve
+node scripts/serve.mjs
 ```
 
-Open http://localhost:5500. Use an HTTP server rather than opening the editor as
-a `file:` URL: component templates are fetched at runtime. LadrillosJS and Lucide
-are pinned CDN imports, so the editor needs an internet connection on first load.
+Open http://localhost:5500. The server has no dependencies; set `PORT` to change
+the port. Any other static server works too, except the phone remote then needs its
+network address typed in by hand (see Phone Remote). Use an HTTP server rather than
+opening the editor as a `file:` URL: component templates are fetched at runtime.
+LadrillosJS and Lucide are pinned CDN imports, so the editor needs an internet
+connection on first load.
 
 ## Editor
 
@@ -116,6 +119,24 @@ for the current slide, next slide, and notes on a second screen. Allow popups wh
 prompted. Presenter controls use a session-specific BroadcastChannel; separate
 editors cannot accidentally navigate each other's presentations.
 
+### Phone Remote
+
+Use the phone button in the toolbar or player to turn your phone into a light
+remote: it shows the current slide's notes, the next slide's title, and the
+timer, with Previous, Next, and Blackout buttons. It never receives the deck.
+
+Pairing is serverless. Escena shows a QR code; scan it with the phone camera,
+then hold the code the phone displays up to the computer's webcam (or paste it).
+The devices then talk directly over a WebRTC data channel, so they must share a
+network (the same Wi-Fi, or your phone's hotspot; some venue Wi-Fi isolates
+devices). There is no STUN/TURN server.
+
+When Escena is served by `scripts/serve.mjs` (the **serve Escena** task), the dialog
+fills in this computer's network address automatically. With another server on
+`localhost`, enter the address yourself (for example `http://192.168.1.20:5500`) so
+the phone can load `remote.html`. QR encoding and decoding load pinned CDN libraries
+(`qrcode-generator`, `jsqr`), and the phone needs internet access for the former.
+
 ### Loading Speed
 
 Slides that have been shown stay mounted for the rest of the session, so going
@@ -185,6 +206,8 @@ Both keep focused inputs and unchanged previews alive during edits.
 [app/presentation.js](app/presentation.js) owns playback. The separate
 [app/presenter.js](app/presenter.js) is only a remote control: it receives snapshots
 and sends navigation commands, never saves or edits the deck.
+[app/remote-link.js](app/remote-link.js) is the WebRTC pairing and messaging layer
+behind the phone remote ([remote.html](remote.html), [app/phone-dialog.js](app/phone-dialog.js)).
 
 [app/files.js](app/files.js) handles local files and playable snapshots. The HTML
 export copies Ladrillos' adopted stylesheets into declarative shadow roots so

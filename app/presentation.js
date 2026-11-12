@@ -3,6 +3,7 @@ import { store } from "./store.js";
 import { createSlideCache, warmAround } from "./renderer.js";
 import { paintIcons } from "./icons.js";
 import { thumbnail, notify } from "./editor.js";
+import { openPhoneDialog } from "./phone-dialog.js";
 
 let host;
 let refs;
@@ -26,6 +27,49 @@ export function formatTime(seconds)
 function publish()
 {
     channel?.postMessage({ type: "state", deck: store.deck(), index: store.currentIndex(), startedAt, black, presenting: store.mode() === "present" });
+    publishRemotes();
+}
+
+// Phones get a few fields instead of the deck: just enough to read the notes
+// and move between slides. The timer is sent as elapsed seconds because the
+// phone's clock can't be assumed to match this one.
+const remotes = new Set();
+const REMOTE_COMMANDS = ["prev", "next", "blackout", "resetTimer"];
+
+function publishRemotes()
+{
+    if (!remotes.size) return;
+    const presenting = store.mode() === "present";
+    const slides = store.slides();
+    const index = store.currentIndex();
+    const message = {
+        type: "remote",
+        presenting,
+        black,
+        index,
+        count: slides.length,
+        title: store.title(),
+        name: slides[index]?.name ?? "",
+        next: slides[index + 1]?.name ?? "",
+        notes: (slides[index]?.notes ?? "").slice(0, 20000),
+        elapsed: presenting ? Math.floor((Date.now() - startedAt) / 1000) : 0,
+    };
+    for (const link of remotes) link.send(message);
+}
+
+function addRemote(link)
+{
+    remotes.add(link);
+    link.onmessage = (data) =>
+    {
+        if (data?.type === "hello") publishRemotes();
+        if (data?.type === "command" && store.mode() === "present" && REMOTE_COMMANDS.includes(data.name)) presentation[data.name]();
+    };
+    link.onstatechange = (state) =>
+    {
+        if (state === "closed") { remotes.delete(link); notify("Phone disconnected."); }
+    };
+    publishRemotes();
 }
 
 channel?.addEventListener("message", ({ data }) =>
@@ -144,6 +188,7 @@ export const presentation = {
         if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
         else host.requestFullscreen?.().catch(() => notify("Fullscreen is unavailable in this browser."));
     },
+    phone() { openPhoneDialog(addRemote); },
     presenter()
     {
         if (!channel) return notify("Presenter windows require BroadcastChannel support.");

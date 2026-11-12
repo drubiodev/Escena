@@ -38,6 +38,7 @@ export function installCommands()
                 case "file:html": await exportHTML(); break;
                 case "present": presentation.open(); break;
                 case "present:first": presentation.open(true); break;
+                case "phone": presentation.phone(); break;
                 case "overview": openOverview(); break;
                 case "undo": store.undo(); break;
                 case "redo": store.redo(); break;

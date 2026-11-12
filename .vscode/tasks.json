@@ -4,14 +4,9 @@
         {
             "label": "serve Escena",
             "type": "shell",
-            "command": "npx",
+            "command": "node",
             "args": [
-                "--yes",
-                "serve@14.2.5",
-                ".",
-                "--listen",
-                "5500",
-                "--no-clipboard"
+                "scripts/serve.mjs"
             ],
             "isBackground": true,
             "problemMatcher": {

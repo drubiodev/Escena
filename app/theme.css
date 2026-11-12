@@ -1632,6 +1632,52 @@ dialog::backdrop {
     border-bottom: 0;
 }
 
+.phone-dialog {
+    width: min(480px, calc(100vw - 32px));
+}
+
+.phone-dialog p {
+    margin-bottom: 16px;
+}
+
+.phone-field {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--ui-muted);
+}
+
+.phone-field input,
+.phone-field textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--ui-border-strong);
+    border-radius: var(--ui-radius);
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    font: 13px ui-monospace, monospace;
+}
+
+.phone-qr {
+    display: block;
+    width: min(100%, 340px);
+    height: auto;
+    margin: 0 auto 16px;
+    image-rendering: pixelated;
+    border-radius: 6px;
+}
+
+.phone-scan {
+    display: block;
+    width: 100%;
+    max-height: 240px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    background: #000;
+    object-fit: cover;
+}
+
 .confirm-dialog {
     width: min(440px, calc(100vw - 32px));
     padding: 24px;
