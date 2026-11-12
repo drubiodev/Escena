@@ -188,10 +188,12 @@ export const store = {
         if (!["default", "paper", "midnight", "forest"].includes(value)) return;
         commit(() => { deck.theme = value; }, "theme");
     },
-    setSlideProp(key, value)
+    setSlideProp(key, value, slideId = null)
     {
         if (!["name", "notes", "background"].includes(key)) return;
-        commit(() => { this.slide()[key] = value; }, "slide:prop", `${this.slide().id}:${key}`);
+        const target = slideId ? deck.slides.find((slide) => slide.id === slideId) : this.slide();
+        if (!target) return;
+        commit(() => { target[key] = value; }, "slide:prop", `${target.id}:${key}`);
     },
     addSlide(layout = "blank")
     {

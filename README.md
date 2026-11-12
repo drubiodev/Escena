@@ -124,6 +124,9 @@ editors cannot accidentally navigate each other's presentations.
 Use the phone button in the toolbar or player to turn your phone into a light
 remote: it shows the current slide's notes, the next slide's title, and the
 timer, with Previous, Next, and Blackout buttons. It never receives the deck.
+Tap **Edit notes** to change the current slide's notes from the phone; edits are
+saved to that slide on the computer a moment after you stop typing (and appear in
+its notes box and undo history). The Previous/Next buttons are hidden while editing.
 
 Pairing is serverless. Escena shows a QR code; scan it with the phone camera,
 then hold the code the phone displays up to the computer's webcam (or paste it).

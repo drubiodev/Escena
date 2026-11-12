@@ -281,3 +281,16 @@ test("new and imported decks can be undone", async () =>
     store.undo();
     assert.equal(JSON.stringify(store.deck()), before);
 });
+
+test("notes can be set on a specific slide without changing the selection", async () =>
+{
+    const { store } = await setup();
+    const first = store.slide().id;
+    store.addSlide();
+    store.setSlideProp("notes", "for the first slide", first);
+    assert.equal(store.slides()[0].notes, "for the first slide");
+    assert.equal(store.slide().notes, "");
+    assert.equal(store.currentIndex(), 1);
+    store.setSlideProp("notes", "ignored", "missing-id");
+    assert.equal(store.slides().some((slide) => slide.notes === "ignored"), false);
+});

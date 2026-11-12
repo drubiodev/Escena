@@ -35,6 +35,7 @@ function publish()
 // phone's clock can't be assumed to match this one.
 const remotes = new Set();
 const REMOTE_COMMANDS = ["prev", "next", "blackout", "resetTimer"];
+const MAX_REMOTE_NOTES = 20000;
 
 function publishRemotes()
 {
@@ -47,11 +48,14 @@ function publishRemotes()
         presenting,
         black,
         index,
+        id: slides[index]?.id ?? "",
         count: slides.length,
         title: store.title(),
         name: slides[index]?.name ?? "",
         next: slides[index + 1]?.name ?? "",
-        notes: (slides[index]?.notes ?? "").slice(0, 20000),
+        notes: (slides[index]?.notes ?? "").slice(0, MAX_REMOTE_NOTES),
+        // The phone only holds a prefix of oversized notes, so it must not write them back.
+        truncated: (slides[index]?.notes?.length ?? 0) > MAX_REMOTE_NOTES,
         elapsed: presenting ? Math.floor((Date.now() - startedAt) / 1000) : 0,
     };
     for (const link of remotes) link.send(message);
@@ -64,6 +68,14 @@ function addRemote(link)
     {
         if (data?.type === "hello") publishRemotes();
         if (data?.type === "command" && store.mode() === "present" && REMOTE_COMMANDS.includes(data.name)) presentation[data.name]();
+        // Notes edits are addressed by slide id, so one that arrives after the
+        // slide changed still lands on the slide the phone was editing.
+        if (data?.type === "notes" && typeof data.id === "string" && typeof data.text === "string" && data.text.length <= MAX_REMOTE_NOTES
+            && store.slides().some((slide) => slide.id === data.id))
+        {
+            store.setSlideProp("notes", data.text, data.id);
+            link.send({ type: "saved", id: data.id });
+        }
     };
     link.onstatechange = (state) =>
     {

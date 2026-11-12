@@ -50,20 +50,94 @@ function showRemote(link)
     let receivedAt = 0;
     const prev = document.querySelector('[data-command="prev"]');
     const next = document.querySelector('[data-command="next"]');
+    const editButton = $("edit-notes");
+    const editor = $("notes-editor");
+    const notesView = $("notes");
+    const EMPTY_NOTES = "No notes for this slide.";
+
+    // Notes editing: edits are sent shortly after typing stops, addressed by slide id.
+    // While an edit is unconfirmed, incoming copies of that slide's notes are ignored
+    // so the computer's older text can't overwrite what was just typed.
+    let editing = false;
+    let editId = "";
+    let pending = false;
+    let timer = 0;
+    let inFlight = 0;
+    let heldId = "";
+
+    const holdsNotes = (id) => id === heldId && (editing || inFlight > 0);
+
+    function flush()
+    {
+        clearTimeout(timer);
+        if (!pending) return;
+        pending = false;
+        if (link.send({ type: "notes", id: editId, text: editor.value }))
+        {
+            inFlight++;
+            heldId = editId;
+            $("save-state").textContent = "Saving...";
+        }
+        else $("save-state").textContent = "Not saved: connection lost";
+    }
+
+    function startEdit()
+    {
+        if (!state?.id || state.truncated) return;
+        editing = true;
+        editId = heldId = state.id;
+        editor.value = state.notes;
+        notesView.hidden = true;
+        editor.hidden = false;
+        $("controls").hidden = true;
+        editButton.textContent = "Done";
+        editor.focus();
+    }
+
+    function stopEdit()
+    {
+        flush();
+        editing = false;
+        notesView.textContent = editor.value || EMPTY_NOTES;
+        editor.hidden = true;
+        notesView.hidden = false;
+        $("controls").hidden = false;
+        editButton.textContent = "Edit notes";
+    }
+
+    editButton.addEventListener("click", () => (editing ? stopEdit() : startEdit()));
+    editor.addEventListener("input", () =>
+    {
+        pending = true;
+        $("save-state").textContent = "Editing...";
+        clearTimeout(timer);
+        timer = setTimeout(flush, 500);
+    });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
+    window.addEventListener("pagehide", flush);
 
     link.onmessage = (data) =>
     {
+        if (data?.type === "saved")
+        {
+            inFlight = Math.max(0, inFlight - 1);
+            if (!pending && !inFlight) $("save-state").textContent = "Saved";
+            return;
+        }
         if (data?.type !== "remote") return;
+        // The slide changed under an open editor: save it, then follow along.
+        if (editing && data.id !== editId) stopEdit();
         state = data;
         receivedAt = Date.now();
         $("title").textContent = data.title;
         $("counter").textContent = `${data.index + 1} / ${data.count}`;
         $("slide-name").textContent = data.name;
-        if ($("notes").textContent !== (data.notes || "No notes for this slide."))
+        if (!holdsNotes(data.id) && $("notes").textContent !== (data.notes || EMPTY_NOTES))
         {
-            $("notes").textContent = data.notes || "No notes for this slide.";
+            notesView.textContent = data.notes || EMPTY_NOTES;
             document.querySelector("main").scrollTop = 0;
         }
+        editButton.disabled = !data.id || data.truncated;
         $("next-up").textContent = data.next ? `Up next: ${data.next}` : "Last slide";
         say(!data.presenting ? "Start presenting on the computer" : data.black ? "Screen is blacked out" : "Connected");
         prev.disabled = !data.presenting || data.index === 0;

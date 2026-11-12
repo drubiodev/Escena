@@ -32,6 +32,7 @@
         body {
             display: grid;
             grid-template-rows: auto minmax(0, 1fr) auto;
+            grid-template-columns: minmax(0, 1fr);
             background: var(--bg);
             color: var(--text);
             font: 16px/1.5 system-ui, -apple-system, sans-serif;
@@ -102,6 +103,34 @@
             overflow-wrap: anywhere;
             font-size: var(--notes-size, 22px);
             line-height: 1.55;
+        }
+
+        .notes-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        #notes-editor {
+            display: block;
+            width: 100%;
+            min-height: 50vh;
+            padding: 12px;
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            background: var(--panel);
+            color: var(--text);
+            font: inherit;
+            /* 16px minimum stops iOS from zooming the page when the field is focused. */
+            font-size: max(16px, var(--notes-size, 22px));
+            line-height: 1.55;
+            resize: vertical;
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         #next-up {
@@ -205,7 +234,9 @@
         <section id="remote" hidden>
             <div class="slide-line"><span id="title"></span><span id="counter"></span></div>
             <h1 id="slide-name"></h1>
+            <div class="notes-bar"><span id="save-state" role="status"></span><button class="small" id="edit-notes" disabled>Edit notes</button></div>
             <p id="notes"></p>
+            <textarea id="notes-editor" aria-label="Speaker notes" hidden></textarea>
             <p id="next-up"></p>
         </section>
     </main>
