@@ -110,16 +110,33 @@ test("only changed block content is reinitialized", async () =>
     assert.equal(frame.parent, null);
 });
 
-test("cache evicts least recently visited slides and clears deleted decks", async () =>
+test("visited slides stay mounted for the session and warmed slides stay hidden", async () =>
 {
     const { cache, surface } = await setup();
     const first = slide("first");
     const frame = cache.show(first, "paper").get("first-block");
-    for (let index = 0; index < 4; index++) cache.show(slide(String(index)), "paper");
-    cache.show(first, "paper");
-    cache.show(slide("last"), "paper");
-    assert.equal(surface.children.length, 5);
+    for (let index = 0; index < 8; index++) cache.show(slide(String(index)), "paper");
     assert.equal(frame.parent, surface);
+    assert.equal(surface.children.length, 9);
+
+    const ahead = slide("ahead");
+    cache.warm(ahead, "paper");
+    const warmed = surface.children.at(-1);
+    assert.equal(warmed.hidden, true);
+    assert.equal(warmed.inert, true);
+    assert.equal(warmed.dataset.active, "false");
+    const component = warmed.firstElementChild;
+    cache.show(ahead, "paper");
+    assert.equal(warmed.hidden, false);
+    assert.equal(surface.children.at(-1), warmed);
+    assert.equal(warmed.firstElementChild, component);
+    assert.equal(component.events.at(-1).detail.active, true);
+
+    cache.park();
+    assert.equal(warmed.parent, surface);
+    assert.equal(warmed.hidden, true);
+    assert.equal(component.events.at(-1).detail.active, false);
+
     cache.prune([first]);
     assert.equal(surface.children.length, 1);
     cache.clear();

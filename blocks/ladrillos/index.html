@@ -1,5 +1,6 @@
 <div class="component-preview">
     <iframe $ref="frame" title="Ladrillos component preview" sandbox="allow-scripts"></iframe>
+    <div class="preview-skeleton" aria-hidden="true"></div>
 </div>
 
 <script type="module">
@@ -29,6 +30,22 @@
     }, "*");
     $host.addEventListener("escena:activity", sendActivity);
     $refs.frame.addEventListener("load", sendActivity);
+
+    // The iframe reports once its component is mounted (or failed) so the
+    // skeleton can fade out instead of showing a blank box while it boots.
+    // The IIFE keeps these helpers out of the framework's top-level rewriting.
+    (() => {
+        const reveal = () => {
+            window.removeEventListener("message", onMessage);
+            clearTimeout(timer);
+            $host.classList.add("is-ready");
+        };
+        const onMessage = (event) => {
+            if (event.source === $refs.frame.contentWindow && event.data?.type === "escena:ready") reveal();
+        };
+        const timer = setTimeout(reveal, 4000);
+        window.addEventListener("message", onMessage);
+    })();
 
     $refs.frame.srcdoc = `<!doctype html>
 <html>
@@ -66,6 +83,7 @@
             const output = document.getElementById("error");
             output.textContent = [error?.message || String(error), error?.cause?.message].filter(Boolean).join("\\n");
             output.style.display = "block";
+            parent.postMessage({ type: "escena:ready" }, "*");
         };
         window.addEventListener("error", (event) => showError(event.error || event.message));
         window.addEventListener("unhandledrejection", (event) => showError(event.reason));
@@ -141,6 +159,8 @@
             document.getElementById("mount").append(document.createElement(${JSON.stringify(componentTag)}));
             syncActivity();
             URL.revokeObjectURL(sourceUrl);
+            // Timers still run in hidden iframes; animation frames do not.
+            setTimeout(() => parent.postMessage({ type: "escena:ready" }, "*"), 0);
         }
         catch (error) {
             showError(error);
@@ -167,5 +187,39 @@
     iframe {
         border: 0;
         background: transparent;
+        opacity: 0;
+        transition: opacity 220ms ease;
+    }
+
+    :host(.is-ready) iframe {
+        opacity: 1;
+    }
+
+    .component-preview {
+        position: relative;
+    }
+
+    .preview-skeleton {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 45%) 50%, transparent 70%) 0 0 / 200% 100%;
+        animation: preview-shimmer 1.2s linear infinite;
+        transition: opacity 220ms ease;
+    }
+
+    :host(.is-ready) .preview-skeleton {
+        opacity: 0;
+        animation: none;
+    }
+
+    @keyframes preview-shimmer {
+        from { background-position: 100% 0; }
+        to { background-position: -100% 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        iframe, .preview-skeleton { transition: none; }
+        .preview-skeleton { animation: none; }
     }
 </style>

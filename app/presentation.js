@@ -1,6 +1,6 @@
 import { $listen } from "ladrillosjs";
 import { store } from "./store.js";
-import { createSlideCache } from "./renderer.js";
+import { createSlideCache, warmAround } from "./renderer.js";
 import { paintIcons } from "./icons.js";
 import { thumbnail, notify } from "./editor.js";
 
@@ -12,6 +12,7 @@ let timer;
 let black = false;
 let returnFocus;
 let presenterWindow;
+let cancelWarm = () => { };
 const session = crypto.randomUUID();
 const channel = typeof BroadcastChannel === "function" ? new BroadcastChannel(`escena-presenter:${session}`) : null;
 
@@ -48,6 +49,8 @@ function draw()
     if (!refs || store.mode() !== "present") return;
     slideCache.prune(store.slides());
     slideCache.show(store.slide(), store.theme());
+    cancelWarm();
+    cancelWarm = warmAround(slideCache, store.slides(), store.currentIndex(), store.theme(), { ahead: 2, behind: 1 });
     refs.counter.textContent = `${store.currentIndex() + 1} / ${store.slideCount()}`;
     host.querySelector('[data-present="prev"]').disabled = store.currentIndex() === 0;
     host.querySelector('[data-present="next"]').disabled = store.currentIndex() === store.slideCount() - 1;
@@ -82,9 +85,21 @@ export const presentation = {
             touchStart = null;
         }, { passive: true });
     },
+    /** Mounts the opening slides before Present is pressed so the first frame isn't blank. */
+    warm(fromStart = false)
+    {
+        if (!host || store.mode() === "present") return;
+        const index = fromStart ? 0 : store.currentIndex();
+        const slides = store.slides();
+        cancelWarm();
+        slideCache.prune(slides);
+        slideCache.warm(slides[index], store.theme());
+        cancelWarm = warmAround(slideCache, slides, index, store.theme(), { ahead: 2, behind: 0 });
+    },
     open(fromStart = false)
     {
         if (!host) return;
+        cancelWarm();
         returnFocus = document.activeElement;
         if (fromStart) store.goTo(0);
         black = false;
@@ -104,7 +119,9 @@ export const presentation = {
     {
         if (!host) return;
         host.hidden = true;
-        slideCache.clear();
+        // Keep mounted slides for the session so reopening doesn't reload them.
+        cancelWarm();
+        slideCache.park();
         clearInterval(timer);
         document.querySelector(".slideshow-app").inert = false;
         store.setMode("edit");

@@ -4,6 +4,7 @@ import
 {
     createSlideCache,
     styleFrame,
+    warmAround,
 } from "./renderer.js";
 import { store } from "./store.js";
 import { paintIcons } from "./icons.js";
@@ -88,6 +89,7 @@ export function mount($host, $refs)
 
     const slideCache = createSlideCache(slidePage, { preview: true });
     let frames = new Map();
+    let cancelWarm = () => { };
     const fittedImageSources = new Map();
 
     /** Updates existing frames while preserving DOM identity for unchanged blocks. */
@@ -104,6 +106,9 @@ export function mount($host, $refs)
         }
 
         paintSelection(store.selected());
+        // Edits fire often; only the latest request is worth warming neighbors for.
+        cancelWarm();
+        cancelWarm = warmAround(slideCache, store.slides(), store.currentIndex(), store.theme(), { ahead: 1, behind: 1 });
     }
 
     $listen("escena:change", ({ reason }) =>

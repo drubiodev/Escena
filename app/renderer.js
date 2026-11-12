@@ -94,9 +94,13 @@ export function renderSlide(slidePage, slideData, theme, options)
         slidePage.appendChild(createFrame(block, options));
 }
 
+/** Visited slides stay mounted for the session; this only guards runaway decks. */
+const MAX_CACHED_SLIDES = 60;
+
 export function createSlideCache(slidePage, options)
 {
     const slides = new Map();
+    let currentId = null;
     const setActive = (frame, active) =>
     {
         if (frame.dataset.active === String(active)) return;
@@ -112,42 +116,57 @@ export function createSlideCache(slidePage, options)
         }
         slides.delete(id);
     };
+    // Creates or updates a slide's frames without deciding whether it is visible.
+    const sync = (slide, theme, active) =>
+    {
+        let frames = slides.get(slide.id);
+        if (!frames) frames = new Map();
+        slides.delete(slide.id);
+        slides.set(slide.id, frames);
+        slidePage.dataset.theme = theme;
+        const visibleIds = new Set(slide.blocks.map((block) => block.id));
+        for (const [id, frame] of frames)
+        {
+            if (visibleIds.has(id)) continue;
+            setActive(frame, false);
+            frame.remove();
+            frames.delete(id);
+        }
+        for (const block of [...slide.blocks].sort((first, second) => first.z - second.z))
+        {
+            const signature = JSON.stringify([block.type, block.props || {}]);
+            let frame = frames.get(block.id);
+            if (!frame)
+            {
+                frame = createFrame(block, options);
+                frame.dataset.signature = signature;
+                frames.set(block.id, frame);
+                frame.dataset.active = String(active);
+                slidePage.appendChild(frame);
+            }
+            else if (frame.dataset.signature !== signature)
+            {
+                frame.replaceChildren(createBlockEl(block, options));
+                frame.dataset.signature = signature;
+            }
+            styleFrame(frame, block);
+        }
+        return frames;
+    };
+    const evict = () =>
+    {
+        for (const id of slides.keys())
+        {
+            if (slides.size <= MAX_CACHED_SLIDES) break;
+            if (id !== currentId) remove(id);
+        }
+    };
     return {
         show(slide, theme, active = true)
         {
-            let frames = slides.get(slide.id);
-            if (!frames) frames = new Map();
-            slides.delete(slide.id);
-            slides.set(slide.id, frames);
-            slidePage.dataset.theme = theme;
+            currentId = slide.id;
             slidePage.style.background = slide.background || "";
-            const visibleIds = new Set(slide.blocks.map((block) => block.id));
-            for (const [id, frame] of frames)
-            {
-                if (visibleIds.has(id)) continue;
-                setActive(frame, false);
-                frame.remove();
-                frames.delete(id);
-            }
-            for (const block of [...slide.blocks].sort((first, second) => first.z - second.z))
-            {
-                const signature = JSON.stringify([block.type, block.props || {}]);
-                let frame = frames.get(block.id);
-                if (!frame)
-                {
-                    frame = createFrame(block, options);
-                    frame.dataset.signature = signature;
-                    frames.set(block.id, frame);
-                    frame.dataset.active = String(active);
-                    slidePage.appendChild(frame);
-                }
-                else if (frame.dataset.signature !== signature)
-                {
-                    frame.replaceChildren(createBlockEl(block, options));
-                    frame.dataset.signature = signature;
-                }
-                styleFrame(frame, block);
-            }
+            const frames = sync(slide, theme, active);
             for (const [id, cachedFrames] of slides)
             {
                 for (const frame of cachedFrames.values())
@@ -157,8 +176,34 @@ export function createSlideCache(slidePage, options)
                     setActive(frame, id === slide.id && active);
                 }
             }
-            while (slides.size > 5) remove(slides.keys().next().value);
+            evict();
             return frames;
+        },
+        /** Mounts a slide offscreen so its blocks finish loading before it is shown. */
+        warm(slide, theme)
+        {
+            if (slide.id === currentId) return;
+            const frames = sync(slide, theme, false);
+            for (const frame of frames.values())
+            {
+                frame.hidden = true;
+                frame.inert = true;
+            }
+            evict();
+        },
+        /** Pauses and hides every slide but keeps the mounted blocks for later. */
+        park()
+        {
+            currentId = null;
+            for (const frames of slides.values())
+            {
+                for (const frame of frames.values())
+                {
+                    setActive(frame, false);
+                    frame.hidden = true;
+                    frame.inert = true;
+                }
+            }
         },
         prune(currentSlides)
         {
@@ -167,7 +212,52 @@ export function createSlideCache(slidePage, options)
         },
         clear()
         {
+            currentId = null;
             for (const id of slides.keys()) remove(id);
         },
     };
+}
+
+/**
+ * Runs a callback when the browser is idle, falling back to a short timer.
+ * @param {() => void} callback Work that should not compete with interaction.
+ * @returns {() => void} Cancels the pending callback.
+ */
+export function whenIdle(callback)
+{
+    if (typeof requestIdleCallback === "function")
+    {
+        const handle = requestIdleCallback(callback, { timeout: 1500 });
+        return () => cancelIdleCallback(handle);
+    }
+    const handle = setTimeout(callback, 200);
+    return () => clearTimeout(handle);
+}
+
+/**
+ * Warms the slides a presenter is most likely to visit next.
+ * @param {{warm: Function}} cache Slide cache to fill.
+ * @param {Object[]} slides The deck's slides.
+ * @param {number} index The slide being shown.
+ * @param {string} theme The active deck theme key.
+ * @returns {() => void} Cancels any warming still pending.
+ */
+export function warmAround(cache, slides, index, theme, { ahead = 2, behind = 1 } = {})
+{
+    const targets = [];
+    for (let step = 1; step <= Math.max(ahead, behind); step++)
+    {
+        if (step <= ahead && slides[index + step]) targets.push(slides[index + step]);
+        if (step <= behind && slides[index - step]) targets.push(slides[index - step]);
+    }
+    // One slide per idle slot keeps a heavy component from blocking typing.
+    const next = () =>
+    {
+        const slide = targets.shift();
+        if (!slide) return;
+        cache.warm(slide, theme);
+        cancel = whenIdle(next);
+    };
+    let cancel = whenIdle(next);
+    return () => cancel();
 }

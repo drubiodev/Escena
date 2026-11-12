@@ -15,6 +15,15 @@ export function installCommands()
         finally { chooser.value = ""; }
     });
 
+    // Hovering or focusing Present is a strong hint; mount the opening slides now.
+    const warmPresent = (event) =>
+    {
+        const name = event.target.closest?.("[data-command]")?.dataset.command;
+        if (name === "present" || name === "present:first") presentation.warm(name === "present:first");
+    };
+    document.addEventListener("pointerover", warmPresent);
+    document.addEventListener("focusin", warmPresent);
+
     // Buttons and shortcuts speak the same small command language. Keep the
     // routing here so components don't need to know how files or playback work.
     $listen("escena:command", async (command) =>

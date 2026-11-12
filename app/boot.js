@@ -12,6 +12,7 @@ import { installCommands } from "./commands.js";
 import * as editor from "./editor.js";
 import { installShortcuts } from "./shortcuts.js";
 import { presentation } from "./presentation.js";
+import { whenIdle } from "./renderer.js";
 
 const APP_COMPONENTS = [
     { name: "block-palette", path: "./components/block-palette.html" },
@@ -46,11 +47,20 @@ export async function boot()
     };
 
 
-    // Register everything before wiring commands so the first click has a home.
+    // Register the UI and the blocks this deck uses before wiring commands.
+    // Other block types load when the browser is idle. Elements already in the
+    // DOM upgrade automatically once their tag is defined, so nothing waits.
+    const needed = new Set(["heading", "text"]);
+    for (const slide of store.slides())
+        for (const block of slide.blocks) needed.add(block.type);
+    const blockDefs = registry.componentDefs();
+    const isNeeded = (def) => needed.has(def.name.replace(/-block$/, ""));
     await registerComponents([
         ...APP_COMPONENTS,
-        ...registry.componentDefs(),
+        ...blockDefs.filter(isNeeded),
     ]);
+    const deferred = blockDefs.filter((def) => !isNeeded(def));
+    if (deferred.length) whenIdle(() => registerComponents(deferred).catch(console.error));
 
     installCommands();
     editor.installEditor();

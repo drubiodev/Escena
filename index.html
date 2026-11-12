@@ -49,6 +49,31 @@
             }
         }
     </script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <!-- modulepreload also fetches each module's imports, so only the entry URLs
+         are listed. Keep them on the same version as the import map above. -->
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/ladrillosjs@2.2.0/dist/index.js">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/lucide@0.468.0/+esm">
+    <link rel="modulepreload" href="./app/boot.js">
+    <link rel="modulepreload" href="./app/store.js">
+    <link rel="modulepreload" href="./app/registry.js">
+    <link rel="modulepreload" href="./app/renderer.js">
+    <link rel="modulepreload" href="./app/icons.js">
+    <link rel="modulepreload" href="./app/editor.js">
+    <link rel="modulepreload" href="./app/files.js">
+    <link rel="modulepreload" href="./app/canvas.js">
+    <link rel="modulepreload" href="./app/inspector.js">
+    <link rel="modulepreload" href="./app/commands.js">
+    <link rel="modulepreload" href="./app/shortcuts.js">
+    <link rel="modulepreload" href="./app/presentation.js">
+    <link rel="modulepreload" href="./app/starter-deck.js">
+    <link rel="modulepreload" href="./blocks/index.js">
+    <link rel="preload" as="fetch" crossorigin href="./components/block-palette.html">
+    <link rel="preload" as="fetch" crossorigin href="./components/slide-editor.html">
+    <link rel="preload" as="fetch" crossorigin href="./components/property-inspector.html">
+    <link rel="preload" as="fetch" crossorigin href="./components/slide-navigator.html">
+    <link rel="preload" as="fetch" crossorigin href="./components/editor-toolbar.html">
+    <link rel="preload" as="fetch" crossorigin href="./components/presentation-view.html">
 </head>
 
 <body>

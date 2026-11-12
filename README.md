@@ -116,6 +116,18 @@ for the current slide, next slide, and notes on a second screen. Allow popups wh
 prompted. Presenter controls use a session-specific BroadcastChannel; separate
 editors cannot accidentally navigate each other's presentations.
 
+### Loading Speed
+
+Slides that have been shown stay mounted for the rest of the session, so going
+back to a slide, or presenting again, never reloads its Ladrillos components. The
+neighbouring slides are mounted offscreen when the browser is idle, and hovering
+Present warms the opening slides. A component's state therefore survives between
+presentations until the page is reloaded. Unused block types register when idle.
+
+`index.html` preloads the LadrillosJS and Lucide entry modules. The browser follows
+their imports, so upgrading LadrillosJS only means changing the version in the import
+map and in the matching `modulepreload` link.
+
 ## Keyboard
 
 | Action | Shortcut |

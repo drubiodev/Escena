@@ -1912,3 +1912,78 @@ dialog::backdrop {
         padding: 0 8px;
     }
 }
+
+/* Motion polish. Individual transform properties (scale, translate) are used so
+   these animations never fight the inline rotate() on a frame or the toast. */
+@keyframes escena-pop {
+    from {
+        opacity: 0;
+        scale: 0.985;
+        translate: 0 6px;
+    }
+}
+
+@keyframes escena-fade {
+    from {
+        opacity: 0;
+    }
+}
+
+/* Editor canvas and presenter only; thumbnails re-render often and stay still. */
+slide-editor .slide-page>.frame:not([hidden]),
+.player-surface>.frame:not([hidden]) {
+    animation: escena-pop 220ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.slide-card {
+    animation: escena-pop 240ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.slide-thumbnail {
+    transition: outline-color 140ms ease, scale 140ms ease;
+}
+
+.slide-card:hover .slide-thumbnail {
+    scale: 1.015;
+}
+
+.slide-card:active .slide-thumbnail {
+    scale: 0.98;
+}
+
+.command-button,
+.icon-button,
+.status-button {
+    transition: background 140ms ease, color 140ms ease, transform 90ms ease, filter 140ms ease;
+}
+
+.command-button:active:not(:disabled),
+.icon-button:active:not(:disabled),
+.status-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.toast:not([hidden]) {
+    animation: escena-pop 220ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+[role="tabpanel"]:not([hidden]),
+.notes-panel:not([hidden]),
+presentation-view:not([hidden]) .presentation-shell,
+.overview-dialog[open] {
+    animation: escena-fade 180ms ease backwards;
+}
+
+.overview-dialog[open]::backdrop {
+    animation: escena-fade 180ms ease backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
