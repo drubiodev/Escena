@@ -206,7 +206,12 @@ export const presentation = {
     resetTimer() { startedAt = Date.now(); publish(); },
     fullscreen()
     {
-        if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+        if (document.fullscreenElement)
+        {
+            // The toggle (button or F) leaves fullscreen but keeps presenting.
+            stayOnFullscreenExit = true;
+            document.exitFullscreen().catch(() => { stayOnFullscreenExit = false; });
+        }
         else host.requestFullscreen?.().catch(() => notify("Fullscreen is unavailable in this browser."));
     },
     phone() { openPhoneDialog(addRemote); },
@@ -220,6 +225,21 @@ export const presentation = {
         if (!presenterWindow) notify("Allow popups to open the presenter window.");
     },
 };
+
+// Escape leaves browser fullscreen without reaching the page's key handler, so
+// treat leaving fullscreen as ending the show, as Escape does outside fullscreen.
+// A video going fullscreen inside the player is not the player leaving it.
+let stayOnFullscreenExit = false;
+let playerFullscreen = false;
+document.addEventListener("fullscreenchange", () =>
+{
+    const wasPlayer = playerFullscreen;
+    playerFullscreen = document.fullscreenElement === host;
+    if (!wasPlayer || document.fullscreenElement) return;
+    const stay = stayOnFullscreenExit;
+    stayOnFullscreenExit = false;
+    if (!stay && store.mode() === "present") presentation.close();
+});
 
 $listen("escena:change", ({ reason }) =>
 {

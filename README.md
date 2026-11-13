@@ -113,8 +113,9 @@ pause their work. The editor's components become inactive during presentation.
 
 ## Presenting
 
-Present starts at the selected slide and goes fullscreen (Escape or the fullscreen
-button leaves it). The player includes previous/next, an
+Present starts at the selected slide and goes fullscreen. Escape leaves fullscreen
+and ends the presentation, returning to the editor; the fullscreen button or F
+leaves fullscreen but keeps presenting. The player includes previous/next, an
 overview, blackout, fullscreen, and an elapsed timer. Open the presenter window
 for the current slide, next slide, and notes on a second screen. Allow popups when
 prompted. Presenter controls use a session-specific BroadcastChannel; separate
